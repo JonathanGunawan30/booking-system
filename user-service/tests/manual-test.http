@@ -1,0 +1,164 @@
+### Variables
+@host = http://localhost:8081
+@apiUrl = {{host}}/api/v1
+@contentType = application/json
+
+### ==================== GENERATE API KEY (RUN THIS FIRST) ====================
+
+### 1. Generate API Key (dev only)
+GET {{host}}/dev/api-key?service_name=user-service&request_at={{$isoTimestamp}}
+
+> {%
+    const data = response.body.data;
+    client.global.set("x_api_key", data["x-api-key"]);
+    client.global.set("x_request_at", data["x-request-at"]);
+    client.global.set("x_service_name", "user-service");
+%}
+
+### ==================== PUBLIC ENDPOINTS ====================
+
+### 2. Register
+POST {{apiUrl}}/auth/register
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "name": "Jonathan",
+  "username": "jonathan",
+  "email": "jonathan@example.com",
+  "phone_number": "081234567890",
+  "password": "rahasia",
+  "confirm_password": "rahasia"
+}
+
+### 3. Login
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "username": "jonathan",
+  "password": "rahasia"
+}
+
+> {%
+    client.global.set("token", response.body.token);
+    client.global.set("uuid", response.body.data.uuid);
+%}
+
+### Login - invalid credentials / wrong password (expect 401)
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "username": "jonathan",
+  "password": "wrongpassword"
+}
+
+### Login - invalid credentials / user not found (expect 401)
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "username": "notexist",
+  "password": "rahasia"
+}
+
+### Login - validation error (expect 422)
+POST {{apiUrl}}/auth/login
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "username": "",
+  "password": ""
+}
+
+
+### ==================== AUTHENTICATED ENDPOINTS ====================
+
+### Get User Login (current user from token)
+GET {{apiUrl}}/auth/user
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+### Get User By UUID
+GET {{apiUrl}}/auth/user/{{uuid}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+### Get User By UUID - not found (expect 404)
+GET {{apiUrl}}/auth/user/00000000-0000-0000-0000-000000000000
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+### Update User
+PUT {{apiUrl}}/auth/{{uuid}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "name": "Jonathan Updated",
+  "username": "jonathan_updated",
+  "email": "jonathan.updated@example.com",
+  "phone_number": "089999999999"
+}
+
+
+### ==================== EDGE CASES ====================
+
+### Update User - no token (expect 401)
+PUT {{apiUrl}}/auth/{{uuid}}
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+{
+  "name": "Jonathan Updated"
+}
+
+### No API Key (expect 401)
+GET {{apiUrl}}/auth/user
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+### Invalid token (expect 401)
+GET {{apiUrl}}/auth/user
+Content-Type: {{contentType}}
+Authorization: Bearer invalidtoken123
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+
+### Route not found (expect 404)
+GET {{apiUrl}}/auth/notexist
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
