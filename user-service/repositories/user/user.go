@@ -75,7 +75,7 @@ func (u *UserRepository) Update(ctx context.Context, request *dto.UpdateRequest,
 
 func (u *UserRepository) FindByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
-	result := u.db.WithContext(ctx).Where("username = ?", username).First(&user)
+	result := u.db.WithContext(ctx).Preload("Role").Where("username = ?", username).First(&user)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -89,7 +89,7 @@ func (u *UserRepository) FindByUsername(ctx context.Context, username string) (*
 
 func (u *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	result := u.db.WithContext(ctx).Where("email = ?", email).First(&user)
+	result := u.db.WithContext(ctx).Preload("Role").Where("email = ?", email).First(&user)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -103,7 +103,7 @@ func (u *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 
 func (u *UserRepository) FindByUUID(ctx context.Context, uuid string) (*models.User, error) {
 	var user models.User
-	result := u.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user)
+	result := u.db.WithContext(ctx).Preload("Role").Where("uuid = ?", uuid).First(&user)
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
