@@ -1,0 +1,28 @@
+# Binaries
+bin/
+field-service
+main
+
+# Testing
+*.test
+*.out
+coverage.txt
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build-related
+tmp/
+*.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

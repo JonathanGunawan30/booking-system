@@ -1,0 +1,274 @@
+### Generate API Key
+GET http://localhost:8002/dev/api-key?service_name=field-service
+
+> {%
+    client.global.set("apiKey", response.body.data["x-api-key"]);
+    client.global.set("x_request_at", response.body.data["x-request-at"]);
+    client.global.set("x_service_name", response.body.data["x-service-name"]);
+%}
+
+############################ FIELD ################################
+
+### Create Field
+POST http://localhost:8002/api/v1/field
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="name"
+
+Lapangan A
+--boundary
+Content-Disposition: form-data; name="code"
+
+LAP-001
+--boundary
+Content-Disposition: form-data; name="price_per_hour"
+
+100000
+--boundary
+Content-Disposition: form-data; name="images"; filename="foto.jpg"
+Content-Type: image/jpeg
+
+< ./img/photo.jpg
+--boundary--
+
+### Get list with pagination
+GET http://localhost:8002/api/v1/field/pagination?page=1&limit=10&sort_column=created_at&sort_order=desc
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Get list
+GET http://localhost:8002/api/v1/field
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Get by UUID
+GET http://localhost:8002/api/v1/field/b28abeaa-7b08-4166-bf11-21d84c8f3da3
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Get by UUID Invalid UUID Format Bad Request
+GET http://localhost:8002/api/v1/field/x-invalid-uuid
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Get by UUID Not Found Expect 404 HTTP Status Code
+GET http://localhost:8002/api/v1/field/b28abeaa-7b08-4166-bf11-21d84c8f3da2
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### UPDATE field invalid uuid
+PUT http://localhost:8002/api/v1/field/x-invalid-uuid
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### UPDATE 422 REQUIRED FIELD
+PUT http://localhost:8002/api/v1/field/b28abeaa-7b08-4166-bf11-21d84c8f3da3
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### UPDATE
+PUT http://localhost:8002/api/v1/field/b28abeaa-7b08-4166-bf11-21d84c8f3da3
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="name"
+
+updated_name
+--boundary
+Content-Disposition: form-data; name="code"
+
+001-updated
+--boundary
+Content-Disposition: form-data; name="price_per_hour"
+
+10000000
+--boundary--
+
+### DELETE INVALID UUID
+DELETE http://localhost:8002/api/v1/field/x-invalid-uuid
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### DELETE UUID NOT FOUND EXPECT 404 HTTP STATUS CODE
+DELETE http://localhost:8002/api/v1/field/b28abeaa-7b08-4166-bf11-21d84c8f3da2
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### DELETE
+DELETE http://localhost:8002/api/v1/field/b28abeaa-7b08-4166-bf11-21d84c8f3da3
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+############################ TIME ################################
+
+### Create Time
+POST http://localhost:8002/api/v1/time
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+Content-Type: application/json
+
+{
+    "start_time": "10:10",
+    "end_time": "11:00"
+}
+
+### GET Time
+GET http://localhost:8002/api/v1/time
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### GET Time By UUID
+GET http://localhost:8002/api/v1/time/0a5a6e4e-cfe5-4fd5-93da-1550266789e7
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### GET TIME NOT FOUND EXPECT 404 HTTP STATUS CODE
+GET http://localhost:8002/api/v1/time/0a5a6e4e-cfe5-4fd5-93da-1550266789e2
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### GET TIME INVALID UUID FORMAT
+GET http://localhost:8002/api/v1/time/x-invalid-uuid
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+############################ FIELD SCHEDULE ################################
+
+### Create Field Schedule 422 required field
+POST http://localhost:8002/api/v1/field/schedule
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Create Field Schedule
+POST http://localhost:8002/api/v1/field/schedule
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+Content-Type: application/json
+
+{
+    "field_id": "41bdf7e0-7b98-44ab-8cff-a8414b8bbc1c",
+    "date": "2026-01-01",
+    "time_ids": [
+        "0a5a6e4e-cfe5-4fd5-93da-1550266789e7"
+    ]
+}
+
+### Schedule by UUID
+GET http://localhost:8002/api/v1/field/schedule/3723f3ae-1fc7-4e82-b4f2-b616831c7920
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Schedule by UUID not found 404
+GET http://localhost:8002/api/v1/field/schedule/3723f3ae-1fc7-4e82-b4f2-b616831c7929
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Schedule list DATE REQUIRED 422
+GET http://localhost:8002/api/v1/field/schedule/lists/3723f3ae-1fc7-4e82-b4f2-b616831c7920
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### Schedule date
+GET http://localhost:8002/api/v1/field/schedule/lists/41bdf7e0-7b98-44ab-8cff-a8414b8bbc1c?date=2026-02-02
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### schedule list
+GET http://localhost:8002/api/v1/field/schedule/pagination?page=1&limit=10&sort_column=date&sort_order=asc
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+
+### Schedule not found
+GET http://localhost:8002/api/v1/field/schedule/lists/31bdf7e0-7b98-44ab-8cff-a8414b8bbc1c?date=2026-01-01
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### update schedule 422 required
+PUT http://localhost:8002/api/v1/field/schedule/3723f3ae-1fc7-4e82-b4f2-b616831c7920
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+
+### update schedule
+PUT http://localhost:8002/api/v1/field/schedule/3723f3ae-1fc7-4e82-b4f2-b616831c7920
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-02",
+  "time_id": "0a5a6e4e-cfe5-4fd5-93da-1550266789e7"
+}
+
+### generate one month schedule
+POST http://localhost:8002/api/v1/field/schedule/one-month
+Authorization: Bearer {{token}}
+X-Api-Key: {{apiKey}}
+X-Service-Name: {{x_service_name}}
+X-Request-At: {{x_request_at}}
+Content-Type: application/json
+
+{
+  "field_id": "41bdf7e0-7b98-44ab-8cff-a8414b8bbc1c",
+  "month": 4,
+  "year": 2026
+}
