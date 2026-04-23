@@ -1,6 +1,6 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26.2-alpine AS builder
 
-RUN apk add --no-cache git openssh tzdata build-case
+RUN apk add --no-cache git openssh tzdata build-base
 
 WORKDIR /app
 
@@ -23,4 +23,4 @@ EXPOSE 8002
 
 COPY --from=builder /app/field-service ./field-service
 
-ENTRYPOINT["/app/field-service"]
+ENTRYPOINT ["/app/field-service"]

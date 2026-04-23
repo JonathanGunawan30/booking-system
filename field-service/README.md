@@ -13,7 +13,7 @@ A microservice for managing booking system fields, their operational times, and 
 
 ##  Prerequisites
 
-- Go 1.20+
+- Go 1.26+
 - PostgreSQL
 - Docker & Docker Compose
 - Make
