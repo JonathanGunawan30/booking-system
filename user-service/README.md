@@ -1,7 +1,7 @@
 # User Service
 
 ## Overview
-User Service is a microservice responsible for user management and authentication within the Mini-Soccer platform. It provides robust features for user registration, login, profile management, and secure access control using JWT and API Key validation.
+User Service is a microservice responsible for user management and authentication within the Booking System platform. It provides robust features for user registration, login, profile management, and secure access control using JWT and API Key validation.
 
 ## Tech Stack
 - **Language:** Go 1.25.0

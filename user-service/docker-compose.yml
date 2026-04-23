@@ -1,8 +1,8 @@
-name: ms-user-service
+name: bs-user-service
 services:
-  ms-user-service:
-    container_name: ms-user-service
-#    image: jonathangunawan30/ms-user-service:latest
+  bs-user-service:
+    container_name: bs-user-service
+#    image: jonathangunawan30/bs-user-service:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,22 +11,22 @@ services:
     env_file:
       - .env
     depends_on:
-      - ms-postgres
+      - bs-postgres
     networks:
-      - ms-network
+      - bs-network
 
-  ms-postgres:
-    container_name: ms-postgres
+  bs-postgres:
+    container_name: bs-postgres
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ms_user_service
+      POSTGRES_DB: bs_user_service
     ports:
       - 5432:5432
     networks:
-      - ms-network
+      - bs-network
 
 networks:
-  ms-network:
+  bs-network:
     driver: bridge
