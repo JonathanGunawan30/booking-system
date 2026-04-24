@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .invoice-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: auto;
+            padding: 20mm;
+            background: #fff;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid #333;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+        .company-info h1 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: #000;
+        }
+        .company-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .invoice-meta {
+            text-align: right;
+        }
+        .invoice-meta h2 {
+            margin: 0;
+            font-size: 36px;
+            color: #ccc;
+            letter-spacing: 2px;
+        }
+        .invoice-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .billing-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 50px;
+        }
+        .info-group {
+            width: 45%;
+        }
+        .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #999;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .value {
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        .item-table th {
+            text-align: left;
+            padding: 15px 10px;
+            background-color: #f0f0f0;
+            border-top: 1px solid #ddd;
+            border-bottom: 2px solid #333;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .item-table td {
+            padding: 20px 10px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .totals-container {
+            margin-left: auto;
+            width: 40%;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 10px;
+            background: #333;
+            color: #fff;
+            margin-top: 10px;
+        }
+        .total-label {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .total-amount {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        /* WATERMARK PAID STAMP */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 180px;
+            font-weight: 900;
+            color: rgba(76, 175, 80, 0.12); /* Hijau sangat pudar */
+            border: 15px solid rgba(76, 175, 80, 0.12);
+            padding: 20px 60px;
+            border-radius: 20px;
+            z-index: 0;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+            flex-grow: 1;
+        }
+        .footer {
+            margin-top: auto;
+            padding-top: 50px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        {{if .data.payment_detail.is_paid}}
+        <div class="watermark">PAID</div>
+        {{end}}
+
+        <div class="content">
+            <div class="header">
+                <div class="company-info">
+                    <h1>OFFICIAL INVOICE</h1>
+                    <p>Digital Payment Acknowledgment</p>
+                </div>
+                <div class="invoice-meta">
+                    <h2>INVOICE</h2>
+                    <div class="invoice-number">#{{.invoice_number}}</div>
+                </div>
+            </div>
+
+            <div class="billing-info">
+                <div class="info-group">
+                    <div class="label">Issued To</div>
+                    <div class="value">Verified Customer</div>
+                    
+                    <div class="label">Billing Date</div>
+                    <div class="value">{{.data.payment_detail.date}}</div>
+                </div>
+                <div class="info-group" style="text-align: right;">
+                    <div class="label">Payment Method</div>
+                    <div class="value">{{.data.payment_detail.payment_method}}</div>
+                    
+                    {{if ne .data.payment_detail.bank_name ""}}
+                    <div class="label">Bank Reference</div>
+                    <div class="value">{{.data.payment_detail.bank_name}} - {{.data.payment_detail.va_number}}</div>
+                    {{end}}
+                </div>
+            </div>
+
+            <table class="item-table">
+                <thead>
+                    <tr>
+                        <th width="70%">Description</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .data.items}}
+                    <tr>
+                        <td>{{.description}}</td>
+                        <td class="text-right">{{.price}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <div class="totals-container">
+                <div class="total-row">
+                    <span class="total-label">TOTAL</span>
+                    <span class="total-amount">{{.data.total}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This is a system-generated document and is valid without a physical signature.</p>
+            <p>Thank you for choosing our services.</p>
+        </div>
+    </div>
+</body>
+</html>

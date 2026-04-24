@@ -1,0 +1,32 @@
+name: bs-payment-service
+services:
+  bs-payment-service:
+    container_name: bs-payment-service
+    #    image: jonathangunawan30/bs-payment-service:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8003:8003
+    env_file:
+      - .env
+    depends_on:
+      - bs-postgres
+    networks:
+      - bs-network
+
+  bs-postgres:
+    container_name: bs-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bs_payment_service
+    ports:
+      - 5432:5432
+    networks:
+      - bs-network
+
+networks:
+  bs-network:
+    driver: bridge

@@ -1,0 +1,69 @@
+### Variables
+@host = http://localhost:8003
+@apiUrl = {{host}}/api/v1
+@contentType = application/json
+
+### ==================== GENERATE API KEY (RUN THIS FIRST) ====================
+
+### 1. Generate API Key (dev only)
+GET {{host}}/dev/api-key?service_name=user-service&request_at={{$isoTimestamp}}
+
+> {%
+    const data = response.body.data;
+    client.global.set("x_api_key", data["x-api-key"]);
+    client.global.set("x_request_at", data["x-request-at"]);
+    client.global.set("x_service_name", "user-service");
+%}
+
+### Get list 422 expected
+GET {{apiUrl}}/payments
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+Authorization: Bearer {{token}}
+
+### Get list
+GET {{apiUrl}}/payments?page=1&limit=10
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+Authorization: Bearer {{token}}
+
+### CREATE
+POST {{apiUrl}}/payments
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+Authorization: Bearer {{token}}
+
+{
+  "order_id": "{{$random.uuid}}",
+  "amount": 20000,
+  "expired_at": "2026-12-31T23:59:59Z",
+  "description": "Pembayaran Booking Lapangan",
+  "customer_detail": {
+    "name": "Jonathan",
+    "email": "jonathan@example.com",
+    "phone": "08123456789"
+  },
+  "item_details": [
+    {
+      "id": "item-1",
+      "name": "Sewa Lapangan A",
+      "amount": 20000,
+      "quantity": 1
+    }
+  ]
+}
+
+
+### DETAIL
+GET {{apiUrl}}/payments/e7c034c2-b0bb-4ea6-9503-104e56d0bed8
+Content-Type: {{contentType}}
+x-service-name: {{x_service_name}}
+x-request-at: {{x_request_at}}
+x-api-key: {{x_api_key}}
+Authorization: Bearer {{token}}
