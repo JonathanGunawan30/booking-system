@@ -77,6 +77,19 @@ go build -o user-service .
 ./user-service serve
 ```
 
+## Testing
+This project uses `testify` for assertions and `sqlmock` for database mocking. Tests are located alongside the source code in `_test.go` files.
+
+### Run All Tests
+```bash
+make test
+```
+
+### Run Tests with Coverage
+```bash
+make test-coverage
+```
+
 ## API Documentation
 
 ### Base URL: `/api/v1`

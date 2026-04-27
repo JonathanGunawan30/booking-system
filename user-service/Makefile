@@ -15,6 +15,16 @@ watch: ## Run the service with hot reload
 build: ## Build the service
 	go build -o user-service
 
+## Test:
+test: ## Run all unit tests
+	@echo "$(CYAN)Running tests...$(RESET)"
+	go test -v ./...
+
+test-coverage: ## Run tests with coverage report
+	@echo "$(CYAN)Running tests with coverage...$(RESET)"
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out
+
 ## Docker:
 docker-compose: ## Start the service in docker
 	docker-compose up -d --build --force-recreate
