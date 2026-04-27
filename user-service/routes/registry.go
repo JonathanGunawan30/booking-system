@@ -2,9 +2,12 @@ package routes
 
 import (
 	"user-service/controllers"
+	_ "user-service/docs"
 	routes "user-service/routes/user"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Registry struct {
@@ -21,6 +24,7 @@ func NewRouteRegistry(controller controllers.UserControllerRegistryInterface, gr
 }
 
 func (r *Registry) Serve() {
+	r.group.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.userRoute().Run()
 }
 

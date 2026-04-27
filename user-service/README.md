@@ -91,6 +91,17 @@ make test-coverage
 ```
 
 ## API Documentation
+The API documentation is automatically generated using Swagger.
+
+### Access Swagger UI
+1. Run the service: `go run main.go serve`
+2. Open in browser: `http://localhost:8001/api/v1/swagger/index.html`
+
+### Regenerate Documentation
+If you change annotations in the controller, run:
+```bash
+make swagger
+```
 
 ### Base URL: `/api/v1`
 
