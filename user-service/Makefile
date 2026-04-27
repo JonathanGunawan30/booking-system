@@ -25,6 +25,10 @@ test-coverage: ## Run tests with coverage report
 	go test -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
 
+swagger: ## Generate Swagger documentation
+	@echo "$(CYAN)Generating Swagger docs...$(RESET)"
+	swag init
+
 ## Docker:
 docker-compose: ## Start the service in docker
 	docker-compose up -d --build --force-recreate
