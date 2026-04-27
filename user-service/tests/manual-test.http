@@ -1,5 +1,5 @@
 ### Variables
-@host = http://localhost:8081
+@host = http://localhost:8001
 @apiUrl = {{host}}/api/v1
 @contentType = application/json
 
@@ -41,7 +41,7 @@ x-request-at: {{x_request_at}}
 x-api-key: {{x_api_key}}
 
 {
-  "username": "jonathan",
+  "username": "jonathan_updated",
   "password": "rahasia"
 }
 
