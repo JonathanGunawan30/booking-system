@@ -4,7 +4,7 @@
 User Service is a microservice responsible for user management and authentication within the Booking System platform. It provides robust features for user registration, login, profile management, and secure access control using JWT and API Key validation.
 
 ## Tech Stack
-- **Language:** Go 1.25.0
+- **Language:** Go 1.26.2
 - **Web Framework:** [Gin Gonic](https://gin-gonic.com/)
 - **ORM:** [GORM](https://gorm.io/)
 - **Database:** PostgreSQL
@@ -34,7 +34,7 @@ The project follows a layered architecture to ensure separation of concerns and 
 ```
 
 ## Prerequisites
-- **Go:** 1.25 or higher
+- **Go:** 1.26.2 or higher
 - **PostgreSQL:** A running instance for data storage
 - **Air:** (Optional) For live-reloading during development
 
