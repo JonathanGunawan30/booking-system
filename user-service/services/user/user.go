@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 	"user-service/config"
@@ -38,7 +39,10 @@ func NewUserService(repository repositories.RepositoryRegistryInterface) UserSer
 func (u *UserService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
 	user, err := u.repository.GetUser().FindByUsername(ctx, req.Username)
 	if err != nil {
-		return nil, errConstants.ErrUsernameOrPasswordIncorrect
+		if errors.Is(err, errConstants.ErrUserNotFound) {
+			return nil, errConstants.ErrUsernameOrPasswordIncorrect
+		}
+		return nil, err
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
