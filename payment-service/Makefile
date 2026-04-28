@@ -11,6 +11,12 @@ watch-prepare: ## Install the tools required for the watch command
 watch: ## Run the service with hot reload
 	bin/air
 
+## Swagger:
+swagger: ## Generate swagger documentation
+	@echo "$(CYAN)Generating swagger documentation...$(RESET)"
+	go install github.com/swaggo/swag/cmd/swag@latest
+	$(shell go env GOPATH)/bin/swag init -g cmd/main.go
+
 ## Build:
 build: ## Build the service
 	go build -o payment-service
