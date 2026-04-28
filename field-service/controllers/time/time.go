@@ -26,6 +26,16 @@ func NewTimeController(service services.ServiceRegistryInterface) TimeController
 	return &TimeController{service: service}
 }
 
+// GetAll godoc
+// @Summary Get all operational times
+// @Description Get a list of all operational times
+// @Tags times
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} response.Response{data=[]dto.TimeResponse}
+// @Failure 500 {object} response.Response
+// @Router /time [get]
 func (t *TimeController) GetAll(ctx *gin.Context) {
 	result, err := t.service.GetTime().GetAll(ctx.Request.Context())
 	if err != nil {
@@ -36,6 +46,18 @@ func (t *TimeController) GetAll(ctx *gin.Context) {
 	response.Success(ctx, http.StatusOK, result, nil)
 }
 
+// GetByUUID godoc
+// @Summary Get time detail by UUID
+// @Description Get detailed information about an operational time
+// @Tags times
+// @Accept json
+// @Produce json
+// @Param uuid path string true "Time UUID"
+// @Security ApiKeyAuth
+// @Success 200 {object} response.Response{data=dto.TimeResponse}
+// @Failure 400 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /time/{uuid} [get]
 func (t *TimeController) GetByUUID(ctx *gin.Context) {
 	id := ctx.Param("uuid")
 	if _, err := uuid.Parse(id); err != nil {
@@ -54,6 +76,18 @@ func (t *TimeController) GetByUUID(ctx *gin.Context) {
 	response.Success(ctx, http.StatusOK, result, nil)
 }
 
+// Create godoc
+// @Summary Create a new operational time
+// @Description Create a new operational time slot
+// @Tags times
+// @Accept json
+// @Produce json
+// @Param request body dto.TimeRequest true "Create Time Request"
+// @Security ApiKeyAuth
+// @Success 201 {object} response.Response{data=dto.TimeResponse}
+// @Failure 400 {object} response.Response
+// @Failure 422 {object} response.Response
+// @Router /time [post]
 func (t *TimeController) Create(ctx *gin.Context) {
 	var request dto.TimeRequest
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -77,3 +111,4 @@ func (t *TimeController) Create(ctx *gin.Context) {
 
 	response.Success(ctx, http.StatusCreated, result, nil)
 }
+

@@ -1,0 +1,849 @@
+basePath: /api/v1
+definitions:
+  constants.FieldScheduleStatusName:
+    enum:
+    - Available
+    - Booked
+    type: string
+    x-enum-varnames:
+    - AvailableString
+    - BookedString
+  dto.FieldResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      price_per_hour:
+        type: integer
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  dto.FieldScheduleBookingResponse:
+    properties:
+      date:
+        type: string
+      price_per_hour:
+        type: string
+      status:
+        $ref: '#/definitions/constants.FieldScheduleStatusName'
+      time:
+        type: string
+      uuid:
+        type: string
+    type: object
+  dto.FieldScheduleRequest:
+    properties:
+      date:
+        type: string
+      field_id:
+        type: string
+      time_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - date
+    - field_id
+    - time_ids
+    type: object
+  dto.FieldScheduleResponse:
+    properties:
+      created_at:
+        type: string
+      date:
+        type: string
+      field_name:
+        type: string
+      price_per_hour:
+        type: integer
+      status:
+        $ref: '#/definitions/constants.FieldScheduleStatusName'
+      time:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  dto.GenerateFieldScheduleForOneMonthRequest:
+    properties:
+      field_id:
+        type: string
+      month:
+        maximum: 12
+        minimum: 1
+        type: integer
+      year:
+        type: integer
+    required:
+    - field_id
+    - month
+    - year
+    type: object
+  dto.TimeRequest:
+    properties:
+      end_time:
+        type: string
+      start_time:
+        type: string
+    required:
+    - end_time
+    - start_time
+    type: object
+  dto.TimeResponse:
+    properties:
+      created_at:
+        type: string
+      end_time:
+        type: string
+      start_time:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  dto.UpdateFieldScheduleRequest:
+    properties:
+      date:
+        type: string
+      time_id:
+        type: string
+    required:
+    - date
+    - time_id
+    type: object
+  dto.UpdateStatusFieldScheduleRequest:
+    properties:
+      field_schedule_ids:
+        items:
+          type: string
+        type: array
+      status:
+        enum:
+        - 100
+        - 200
+        type: integer
+    required:
+    - field_schedule_ids
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      message: {}
+      status:
+        type: string
+      token:
+        type: string
+    type: object
+  util.PaginationResult:
+    properties:
+      data: {}
+      limit:
+        type: integer
+      next_page:
+        type: integer
+      page:
+        type: integer
+      previous_page:
+        type: integer
+      total_data:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+host: localhost:8002
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A microservice for managing booking system fields, operational times,
+    and schedules.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Field Service API
+  version: "1.0"
+paths:
+  /field:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all fields
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.FieldResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get all fields without pagination
+      tags:
+      - fields
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create a new field with images
+      parameters:
+      - description: Field Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Field Code
+        in: formData
+        name: code
+        required: true
+        type: string
+      - description: Price Per Hour
+        in: formData
+        name: price_per_hour
+        required: true
+        type: integer
+      - description: Field Images
+        in: formData
+        name: images
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FieldResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new field
+      tags:
+      - fields
+  /field/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a field by UUID
+      parameters:
+      - description: Field UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a field
+      tags:
+      - fields
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a field
+      parameters:
+      - description: Field UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FieldResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get field by UUID
+      tags:
+      - fields
+    put:
+      consumes:
+      - multipart/form-data
+      description: Update field details and images
+      parameters:
+      - description: Field UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Field Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Field Code
+        in: formData
+        name: code
+        required: true
+        type: string
+      - description: Price Per Hour
+        in: formData
+        name: price_per_hour
+        required: true
+        type: integer
+      - description: Field Images
+        in: formData
+        name: images
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FieldResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an existing field
+      tags:
+      - fields
+  /field/pagination:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of fields
+      parameters:
+      - description: Page number
+        in: query
+        minimum: 1
+        name: page
+        required: true
+        type: integer
+      - description: Number of items per page
+        in: query
+        minimum: 1
+        name: limit
+        required: true
+        type: integer
+      - description: Column to sort by
+        enum:
+        - id
+        - date
+        - time
+        - status
+        - created_at
+        - updated_at
+        in: query
+        name: sort_column
+        required: true
+        type: string
+      - description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_order
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/util.PaginationResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get fields with pagination
+      tags:
+      - fields
+  /field/schedule:
+    patch:
+      consumes:
+      - application/json
+      description: Update schedule status (e.g., Booked)
+      parameters:
+      - description: Update Status Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateStatusFieldScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Update field schedule status
+      tags:
+      - field-schedules
+    post:
+      consumes:
+      - application/json
+      description: Create a specific field schedule
+      parameters:
+      - description: Create Schedule Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.FieldScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a field schedule
+      tags:
+      - field-schedules
+  /field/schedule/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a schedule by UUID
+      parameters:
+      - description: Schedule UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete field schedule
+      tags:
+      - field-schedules
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a field schedule
+      parameters:
+      - description: Schedule UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FieldScheduleResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get field schedule by UUID
+      tags:
+      - field-schedules
+    put:
+      consumes:
+      - application/json
+      description: Update schedule details
+      parameters:
+      - description: Schedule UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Update Schedule Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateFieldScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FieldScheduleResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Update field schedule
+      tags:
+      - field-schedules
+  /field/schedule/lists/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get available schedules for a field on a specific date
+      parameters:
+      - description: Field UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Date (YYYY-MM-DD)
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.FieldScheduleBookingResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get schedules by Field ID and Date
+      tags:
+      - field-schedules
+  /field/schedule/one-month:
+    post:
+      consumes:
+      - application/json
+      description: Generate daily schedules for a specific month and year
+      parameters:
+      - description: Generate Monthly Schedule Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateFieldScheduleForOneMonthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Generate field schedules for one month
+      tags:
+      - field-schedules
+  /field/schedule/pagination:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of field schedules
+      parameters:
+      - description: Page number
+        in: query
+        minimum: 1
+        name: page
+        required: true
+        type: integer
+      - description: Number of items per page
+        in: query
+        minimum: 1
+        name: limit
+        required: true
+        type: integer
+      - description: Column to sort by
+        enum:
+        - id
+        - date
+        - time
+        - status
+        - created_at
+        - updated_at
+        in: query
+        name: sort_column
+        required: true
+        type: string
+      - description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_order
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/util.PaginationResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get field schedules with pagination
+      tags:
+      - field-schedules
+  /time:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all operational times
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.TimeResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all operational times
+      tags:
+      - times
+    post:
+      consumes:
+      - application/json
+      description: Create a new operational time slot
+      parameters:
+      - description: Create Time Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TimeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TimeResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new operational time
+      tags:
+      - times
+  /time/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about an operational time
+      parameters:
+      - description: Time UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TimeResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: Get time detail by UUID
+      tags:
+      - times
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
