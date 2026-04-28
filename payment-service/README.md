@@ -62,7 +62,7 @@ R2_BUCKET_NAME=invoices
 R2_PUBLIC_URL=your_public_r2_url
 ```
 
-## Getting Started
+##  Getting Started
 
 1. **Clone the repository**:
    ```bash
@@ -75,7 +75,13 @@ R2_PUBLIC_URL=your_public_r2_url
    go mod tidy
    ```
 
-3. **Run the service**:
+3. **Run tests**:
+   Ensure all logic is working as expected:
+   ```bash
+   make test
+   ```
+
+4. **Run the service**:
    Using `make` (if available):
    ```bash
    make watch
@@ -84,6 +90,19 @@ R2_PUBLIC_URL=your_public_r2_url
    ```bash
    go run main.go serve
    ```
+
+##  Testing
+
+The project includes comprehensive unit tests for Repositories, Services, and Controllers using `testify` and `sqlmock`.
+
+To run the tests:
+```bash
+go test ./...
+```
+Or via Makefile:
+```bash
+make test
+```
 
 ##  API Endpoints
 
