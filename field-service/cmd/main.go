@@ -16,12 +16,36 @@ import (
 	"net/http"
 	"time"
 
+	_ "field-service/docs"
+
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// @title Field Service API
+// @version 1.0
+// @description A microservice for managing booking system fields, operational times, and schedules.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8002
+// @BasePath /api/v1
+// @schemes http
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 
 var command = &cobra.Command{
 	Use:   "serve",
@@ -70,6 +94,8 @@ var command = &cobra.Command{
 		router.GET("/", func(c *gin.Context) {
 			response.Success(c, http.StatusOK, "Hello From Field Service", nil)
 		})
+
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 		router.Use(func(c *gin.Context) {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
