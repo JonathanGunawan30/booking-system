@@ -92,3 +92,17 @@ Alternatively, build the image manually:
 ```bash
 make docker-build tag=1.0.0
 ```
+
+##  Testing
+
+The project uses `testify` for mocking and assertions, and `go-sqlmock` for repository testing.
+
+**Run all tests**:
+```bash
+make test
+```
+
+**Run specific module tests**:
+- **Field**: `make test-field`
+- **Schedule**: `make test-schedule`
+- **Time**: `make test-time`

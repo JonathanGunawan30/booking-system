@@ -19,6 +19,23 @@ build: ## Build the service
 docker-compose: ## Start the service in docker
 	docker-compose up -d --build --force-recreate
 
+## Testing:
+test: ## Run all unit tests
+	@echo "$(CYAN)Running all unit tests...$(RESET)"
+	go test -v ./services/... ./controllers/... ./repositories/...
+
+test-field: ## Run unit tests for Field module
+	@echo "$(CYAN)Running Field module tests...$(RESET)"
+	go test -v ./services/field/... ./controllers/field/... ./repositories/field/...
+
+test-schedule: ## Run unit tests for Field Schedule module
+	@echo "$(CYAN)Running Field Schedule module tests...$(RESET)"
+	go test -v ./services/fieldschedule/... ./controllers/fieldschedule/... ./repositories/fieldschedule/...
+
+test-time: ## Run unit tests for Time module
+	@echo "$(CYAN)Running Time module tests...$(RESET)"
+	go test -v ./services/time/... ./controllers/time/... ./repositories/time/...
+
 docker-build: ## Build the Docker image with a specified tag
 	@echo "$(CYAN)Building Docker image...$(RESET)"
 	@if [ -z "$(tag)" ]; then \
