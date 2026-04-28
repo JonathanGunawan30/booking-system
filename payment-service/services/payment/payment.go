@@ -313,7 +313,7 @@ func (p *PaymentService) WebHook(ctx context.Context, req *dto.WebHook) error {
 	}
 
 	if strings.ToLower(string(req.TransactionStatus)) == strings.ToLower(string(constants.SettlementString)) {
-		datePaid := fmt.Sprintf(paidAt.Format(time.DateOnly))
+		datePaid := paidAt.Format(time.DateOnly)
 		invoiceNumber := fmt.Sprintf("INV/%s/ORD/%d", time.Now().Format(time.DateOnly), p.randomNumber())
 		total := util.RupiahFormat(&paymentUpdate.Amount)
 		invoiceRequest := &dto.InvoiceRequest{

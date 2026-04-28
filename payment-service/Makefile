@@ -15,6 +15,11 @@ watch: ## Run the service with hot reload
 build: ## Build the service
 	go build -o payment-service
 
+## Test:
+test: ## Run unit tests
+	@echo "$(CYAN)Running unit tests...$(RESET)"
+	go test ./... -v
+
 ## Docker:
 docker-compose: ## Start the service in docker
 	docker-compose up -d --build --force-recreate
