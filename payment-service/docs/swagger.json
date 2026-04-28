@@ -1,0 +1,515 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A robust, scalable, and professional payment gateway integration service.",
+        "title": "Payment Service API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8003",
+    "basePath": "/api/v1",
+    "paths": {
+        "/payments": {
+            "get": {
+                "description": "Get a paginated list of payment transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "List payments",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "id",
+                            "order_id",
+                            "expired_at",
+                            "amount",
+                            "status"
+                        ],
+                        "type": "string",
+                        "description": "Column to sort by",
+                        "name": "sort_column",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Sort order",
+                        "name": "sort_order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/util.PaginationResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Initiate a new payment transaction and get a payment link",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create payment",
+                "parameters": [
+                    {
+                        "description": "Payment Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PaymentResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/webhook": {
+            "post": {
+                "description": "Callback endpoint for Midtrans to update payment status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Payment Webhook",
+                "parameters": [
+                    {
+                        "description": "Webhook Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebHook"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/{uuid}": {
+            "get": {
+                "description": "Get detailed information about a specific transaction by its UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get payment detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PaymentResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "constants.PaymentStatusString": {
+            "type": "string",
+            "enum": [
+                "initial",
+                "pending",
+                "settlement",
+                "expire"
+            ],
+            "x-enum-varnames": [
+                "InitialString",
+                "PendingString",
+                "SettlementString",
+                "ExpiredString"
+            ]
+        },
+        "dto.CustomerDetail": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ItemDetail": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PaymentAmount": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PaymentRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "customer_detail",
+                "expired_at",
+                "item_details",
+                "order_id"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "customer_detail": {
+                    "$ref": "#/definitions/dto.CustomerDetail"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "item_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ItemDetail"
+                    }
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "payment_link": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PaymentResponse": {
+            "type": "object",
+            "properties": {
+                "acquirer": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "number"
+                },
+                "bank": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "invoice_link": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "payment_link": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/constants.PaymentStatusString"
+                },
+                "transaction_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "va_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VANumnber": {
+            "type": "object",
+            "properties": {
+                "bank": {
+                    "type": "string"
+                },
+                "va_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.WebHook": {
+            "type": "object",
+            "properties": {
+                "acquirer": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "fraud_status": {
+                    "type": "string"
+                },
+                "gross_amount": {
+                    "type": "string"
+                },
+                "merchant_id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "payment_amount": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PaymentAmount"
+                    }
+                },
+                "payment_type": {
+                    "type": "string"
+                },
+                "settlement_time": {
+                    "type": "string"
+                },
+                "signature_key": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "string"
+                },
+                "status_message": {
+                    "type": "string"
+                },
+                "transaction_id": {
+                    "type": "string"
+                },
+                "transaction_status": {
+                    "$ref": "#/definitions/constants.PaymentStatusString"
+                },
+                "transaction_time": {
+                    "type": "string"
+                },
+                "va_numbers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.VANumnber"
+                    }
+                }
+            }
+        },
+        "response.Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {},
+                "status": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "util.PaginationResult": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "limit": {
+                    "type": "integer"
+                },
+                "next_page": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "previous_page": {
+                    "type": "integer"
+                },
+                "total_data": {
+                    "type": "integer"
+                },
+                "total_page": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

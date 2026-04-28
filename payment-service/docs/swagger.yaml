@@ -1,0 +1,336 @@
+basePath: /api/v1
+definitions:
+  constants.PaymentStatusString:
+    enum:
+    - initial
+    - pending
+    - settlement
+    - expire
+    type: string
+    x-enum-varnames:
+    - InitialString
+    - PendingString
+    - SettlementString
+    - ExpiredString
+  dto.CustomerDetail:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
+  dto.ItemDetail:
+    properties:
+      amount:
+        type: number
+      id:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  dto.PaymentAmount:
+    properties:
+      amount:
+        type: string
+      paid_at:
+        type: string
+    type: object
+  dto.PaymentRequest:
+    properties:
+      amount:
+        type: number
+      customer_detail:
+        $ref: '#/definitions/dto.CustomerDetail'
+      description:
+        type: string
+      expired_at:
+        type: string
+      item_details:
+        items:
+          $ref: '#/definitions/dto.ItemDetail'
+        type: array
+      order_id:
+        type: string
+      payment_link:
+        type: string
+    required:
+    - amount
+    - customer_detail
+    - expired_at
+    - item_details
+    - order_id
+    type: object
+  dto.PaymentResponse:
+    properties:
+      acquirer:
+        type: string
+      amount:
+        type: number
+      bank:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      expired_at:
+        type: string
+      invoice_link:
+        type: string
+      order_id:
+        type: string
+      paid_at:
+        type: string
+      payment_link:
+        type: string
+      status:
+        $ref: '#/definitions/constants.PaymentStatusString'
+      transaction_id:
+        type: string
+      updated_at:
+        type: string
+      uuid:
+        type: string
+      va_number:
+        type: string
+    type: object
+  dto.VANumnber:
+    properties:
+      bank:
+        type: string
+      va_number:
+        type: string
+    type: object
+  dto.WebHook:
+    properties:
+      acquirer:
+        type: string
+      currency:
+        type: string
+      fraud_status:
+        type: string
+      gross_amount:
+        type: string
+      merchant_id:
+        type: string
+      order_id:
+        type: string
+      payment_amount:
+        items:
+          $ref: '#/definitions/dto.PaymentAmount'
+        type: array
+      payment_type:
+        type: string
+      settlement_time:
+        type: string
+      signature_key:
+        type: string
+      status_code:
+        type: string
+      status_message:
+        type: string
+      transaction_id:
+        type: string
+      transaction_status:
+        $ref: '#/definitions/constants.PaymentStatusString'
+      transaction_time:
+        type: string
+      va_numbers:
+        items:
+          $ref: '#/definitions/dto.VANumnber'
+        type: array
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      message: {}
+      status:
+        type: string
+      token:
+        type: string
+    type: object
+  util.PaginationResult:
+    properties:
+      data: {}
+      limit:
+        type: integer
+      next_page:
+        type: integer
+      page:
+        type: integer
+      previous_page:
+        type: integer
+      total_data:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+host: localhost:8003
+info:
+  contact: {}
+  description: A robust, scalable, and professional payment gateway integration service.
+  title: Payment Service API
+  version: "1.0"
+paths:
+  /payments:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of payment transactions
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Page limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: Column to sort by
+        enum:
+        - id
+        - order_id
+        - expired_at
+        - amount
+        - status
+        in: query
+        name: sort_column
+        type: string
+      - description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/util.PaginationResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: List payments
+      tags:
+      - Payments
+    post:
+      consumes:
+      - application/json
+      description: Initiate a new payment transaction and get a payment link
+      parameters:
+      - description: Payment Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaymentResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Create payment
+      tags:
+      - Payments
+  /payments/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific transaction by its UUID
+      parameters:
+      - description: Payment UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaymentResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get payment detail
+      tags:
+      - Payments
+  /payments/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Callback endpoint for Midtrans to update payment status
+      parameters:
+      - description: Webhook Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.WebHook'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Payment Webhook
+      tags:
+      - Webhooks
+swagger: "2.0"

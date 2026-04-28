@@ -8,6 +8,7 @@ import (
 	"payment-service/common/cloudflare"
 	"payment-service/common/response"
 	"payment-service/config"
+	_ "payment-service/docs"
 	kafka2 "payment-service/controllers/kafka"
 	controllers "payment-service/controllers/payment"
 	"payment-service/domain/models"
@@ -23,8 +24,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title Payment Service API
+// @version 1.0
+// @description A robust, scalable, and professional payment gateway integration service.
+// @host localhost:8003
+// @BasePath /api/v1
 var command = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the server",
@@ -73,6 +81,8 @@ var command = &cobra.Command{
 		router.GET("/", func(c *gin.Context) {
 			response.Success(c, http.StatusOK, "Hello From Field Service", nil)
 		})
+
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 		router.Use(func(c *gin.Context) {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

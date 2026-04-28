@@ -104,6 +104,18 @@ Or via Makefile:
 make test
 ```
 
+##  API Documentation
+
+This project uses [Swaggo](https://github.com/swaggo/swag) to generate API documentation.
+
+To generate/update documentation:
+```bash
+make swagger
+```
+
+Once the service is running, you can access the Swagger UI at:
+`http://localhost:8003/swagger/index.html`
+
 ##  API Endpoints
 
 ### Public Routes (Webhook)
