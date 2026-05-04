@@ -1,0 +1,32 @@
+name: bs-order-service
+services:
+  bs-order-service:
+    container_name: bs-order-service
+    #    image: jonathangunawan30/bs-order-service:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8004:8004
+    env_file:
+      - .env
+    depends_on:
+      - bs-postgres
+    networks:
+      - bs-network
+
+  bs-postgres:
+    container_name: bs-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bs_order_service
+    ports:
+      - 5432:5432
+    networks:
+      - bs-network
+
+networks:
+  bs-network:
+    driver: bridge
