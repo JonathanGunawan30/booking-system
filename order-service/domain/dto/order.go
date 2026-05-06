@@ -14,7 +14,7 @@ type OrderRequest struct {
 type OrderRequestParam struct {
 	Page       int     `form:"page" json:"page" validate:"required,gte=1"`
 	Limit      int     `form:"limit" json:"limit" validate:"required,gte=1,lte=100"`
-	SortColumn *string `form:"sort_column" json:"sort_column" validate:"omitempty,oneof=id order_id expired_at amount status"`
+	SortColumn *string `form:"sort_column" json:"sort_column" validate:"omitempty,oneof=id order_id expired_at amount status created_at"`
 	SortOrder  *string `form:"sort_order" json:"sort_order" validate:"omitempty,oneof=asc desc"`
 }
 
@@ -25,6 +25,8 @@ type OrderResponse struct {
 	Amount      float64                     `json:"amount"`
 	Status      constants.OrderStatusString `json:"status"`
 	PaymentLink string                      `json:"payment_link"`
+	InvoiceLink *string                     `json:"invoice_link,omitempty"`
+	Schedules   []FieldData                 `json:"schedules"`
 	OrderDate   time.Time                   `json:"order_date"`
 	CreatedAt   time.Time                   `json:"created_at"`
 	UpdatedAt   time.Time                   `json:"updated_at"`
@@ -37,4 +39,5 @@ type OrderByUserIDResponse struct {
 	OrderDate   time.Time                   `json:"order_date"`
 	PaymentLink string                      `json:"payment_link"`
 	InvoiceLink *string                     `json:"invoice_link,omitempty"`
+	Schedules   []FieldData                 `json:"schedules"`
 }

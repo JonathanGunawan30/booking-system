@@ -18,8 +18,11 @@ var errorCodeMap = map[error]int{
 	ErrInvalidUUIDFormat:   http.StatusBadRequest,
 	ErrUserNotFound:        http.StatusNotFound,
 
-	errOrder.ErrOrderNotFound:      http.StatusNotFound,
-	errOrder.ErrFieldAlreadyBooked: http.StatusConflict,
+	errOrder.ErrOrderNotFound:           http.StatusNotFound,
+	errOrder.ErrFieldNotFound:           http.StatusNotFound,
+	errOrder.ErrFieldAlreadyBooked:      http.StatusConflict,
+	errOrder.ErrOrderFailed:             http.StatusInternalServerError,
+	errOrder.ErrPaymentLinkCreationFailed: http.StatusInternalServerError,
 }
 
 func GetErrorCode(err error) int {

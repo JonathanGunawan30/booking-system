@@ -17,6 +17,7 @@ type TimeServiceInterface interface {
 	GetAll(ctx context.Context) ([]dto.TimeResponse, error)
 	GetByUUID(ctx context.Context, uuid string) (*dto.TimeResponse, error)
 	Create(ctx context.Context, req *dto.TimeRequest) (*dto.TimeResponse, error)
+	Delete(ctx context.Context, uuid string) error
 }
 
 func NewTimeService(repository repositories.RepositoryRegistryInterface) TimeServiceInterface {
@@ -80,4 +81,13 @@ func (t *TimeService) Create(ctx context.Context, req *dto.TimeRequest) (*dto.Ti
 	}
 
 	return response, nil
+}
+
+func (t *TimeService) Delete(ctx context.Context, uuid string) error {
+	_, err := t.repository.GetTime().FindByUUID(ctx, uuid)
+	if err != nil {
+		return err
+	}
+
+	return t.repository.GetTime().Delete(ctx, uuid)
 }

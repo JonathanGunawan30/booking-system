@@ -64,7 +64,7 @@ type Payment struct {
 type Kafka struct {
 	Brokers           []string `mapstructure:"KAFKA_BROKERS"`
 	Topics            []string `mapstructure:"KAFKA_TOPICS"`
-	GroupID           string   `mapstructure:"KAFKA_GROUP_ID"`
+	GroupID           string   `mapstructure:"KAFKA_GROUPID"`
 	Timeout           int      `mapstructure:"KAFKA_TIMEOUT"`
 	MaxRetry          int      `mapstructure:"KAFKA_MAX_RETRY"`
 	MaxWaitTime       int      `mapstructure:"KAFKA_MAX_WAIT_TIME"`
@@ -79,7 +79,7 @@ func bindAllEnvironmentVariables() {
 		"USER_HOST", "USER_SIGNATURE_KEY",
 		"FIELD_HOST", "FIELD_SIGNATURE_KEY",
 		"PAYMENT_HOST", "PAYMENT_SIGNATURE_KEY",
-		"KAFKA_BROKERS", "KAFKA_TIMEOUT", "KAFKA_MAX_RETRY", "KAFKA_MAX_WAIT_TIME", "KAFKA_MAX_PROCESSING_TIME", "KAFKA_BACKOFF_TIME", "KAFKA_GROUP_ID", "KAFKA_TOPICS",
+		"KAFKA_BROKERS", "KAFKA_TIMEOUT", "KAFKA_MAX_RETRY", "KAFKA_MAX_WAIT_TIME", "KAFKA_MAX_PROCESSING_TIME", "KAFKA_BACKOFF_TIME", "KAFKA_GROUPID", "KAFKA_TOPICS",
 		"TIMEZONE", "CONSUL_HTTP_URL", "CONSUL_HTTP_KEY", "CONSUL_HTTP_TOKEN", "CONSUL_WATCH_INTERVAL_SECONDS",
 		"DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASSWORD", "DB_SSL_MODE",
 		"DB_MAX_OPEN_CONNECTION", "DB_MAX_IDLE_CONNECTION", "DB_MAX_LIFETIME", "DB_MAX_IDLE_TIME",

@@ -10,6 +10,7 @@ import (
 	"order-service/common/util"
 	config2 "order-service/config"
 	"order-service/constants"
+	errOrder "order-service/constants/error/order"
 	"order-service/domain/dto"
 	"time"
 
@@ -21,7 +22,7 @@ type FieldClient struct {
 }
 
 type FieldClientInterface interface {
-	GetFieldByUUID(ctx context.Context, uuid uuid.UUID) (*FieldData, error)
+	GetFieldByUUID(ctx context.Context, uuid uuid.UUID) (*dto.FieldData, error)
 	UpdateStatus(ctx context.Context, request *dto.UpdateFieldScheduleStatusRequest) error
 }
 
@@ -29,7 +30,7 @@ func NewFieldClient(client config.ClientConfigInterface) FieldClientInterface {
 	return &FieldClient{client: client}
 }
 
-func (f *FieldClient) GetFieldByUUID(ctx context.Context, uuid uuid.UUID) (*FieldData, error) {
+func (f *FieldClient) GetFieldByUUID(ctx context.Context, uuid uuid.UUID) (*dto.FieldData, error) {
 	unixTime := time.Now().UTC().Format(time.RFC3339)
 	generateAPIKey := fmt.Sprintf("%s:%s:%s",
 		config2.AppConfig.AppName,
@@ -37,17 +38,18 @@ func (f *FieldClient) GetFieldByUUID(ctx context.Context, uuid uuid.UUID) (*Fiel
 		unixTime,
 	)
 	apiKey := util.GenerateSHA256(generateAPIKey)
-	token := ctx.Value(constants.Token).(string)
-	bearerToken := fmt.Sprintf("Bearer %s", token)
-
-	url := fmt.Sprintf("%s/api/v1/field/%s", f.client.BaseURL(), uuid.String())
+	
+	url := fmt.Sprintf("%s/api/v1/field/schedule/%s", f.client.BaseURL(), uuid.String())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set(constants.Authorization, bearerToken)
+	if token, ok := ctx.Value(constants.Token).(string); ok && token != "" {
+		req.Header.Set(constants.Authorization, fmt.Sprintf("Bearer %s", token))
+	}
+
 	req.Header.Set(constants.XServiceName, config2.AppConfig.AppName)
 	req.Header.Set(constants.XApiKey, apiKey)
 	req.Header.Set(constants.XRequestAt, unixTime)
@@ -59,9 +61,13 @@ func (f *FieldClient) GetFieldByUUID(ctx context.Context, uuid uuid.UUID) (*Fiel
 	}
 	defer resp.Body.Close()
 
-	var response FieldResponse
+	var response dto.FieldResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errOrder.ErrFieldNotFound
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -80,16 +86,20 @@ func (f *FieldClient) UpdateStatus(ctx context.Context, request *dto.UpdateField
 	)
 	apiKey := util.GenerateSHA256(generateAPIKey)
 
-	url := fmt.Sprintf("%s/api/v1/field/status", f.client.BaseURL())
+	url := fmt.Sprintf("%s/api/v1/field/schedule", f.client.BaseURL())
 
 	body, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(body))
 	if err != nil {
 		return err
+	}
+
+	if token, ok := ctx.Value(constants.Token).(string); ok && token != "" {
+		req.Header.Set(constants.Authorization, fmt.Sprintf("Bearer %s", token))
 	}
 
 	req.Header.Set(constants.XServiceName, config2.AppConfig.AppName)
@@ -103,14 +113,10 @@ func (f *FieldClient) UpdateStatus(ctx context.Context, request *dto.UpdateField
 	}
 	defer resp.Body.Close()
 
-	var response FieldResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		return err
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("field response: %s", response.Message)
+		var response dto.FieldResponse
+		_ = json.NewDecoder(resp.Body).Decode(&response)
+		return fmt.Errorf("field response error (status %d): %s", resp.StatusCode, response.Message)
 	}
 
 	return nil

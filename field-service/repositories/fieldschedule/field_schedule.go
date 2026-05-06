@@ -12,6 +12,7 @@ import (
 	"field-service/domain/models"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -27,11 +28,34 @@ type FieldScheduleRepositoriesInterface interface {
 	Create(ctx context.Context, req []models.FieldSchedule) error
 	Update(ctx context.Context, uuid string, req *models.FieldSchedule) (*models.FieldSchedule, error)
 	UpdateStatus(ctx context.Context, uuid string, status constants.FieldScheduleStatus) error
+	UpdateStatusWithCheck(ctx context.Context, uuid string, newStatus constants.FieldScheduleStatus, expectedStatus constants.FieldScheduleStatus) error
 	Delete(ctx context.Context, uuid string) error
 }
 
 func NewFieldScheduleRepositories(db *gorm.DB) FieldScheduleRepositoriesInterface {
 	return &FieldScheduleRepositories{db: db}
+}
+
+func (f *FieldScheduleRepositories) UpdateStatusWithCheck(ctx context.Context, uuid string, newStatus constants.FieldScheduleStatus, expectedStatus constants.FieldScheduleStatus) error {
+	result := f.db.WithContext(ctx).Model(&models.FieldSchedule{}).
+		Where("uuid = ? AND status = ?", uuid, expectedStatus).
+		Update("status", newStatus)
+
+	if result.Error != nil {
+		return errWrap.WrapError(errConstant.ErrSQLError)
+	}
+
+	if result.RowsAffected == 0 {
+		// Check if the record exists at all to return a specific error
+		var count int64
+		f.db.WithContext(ctx).Model(&models.FieldSchedule{}).Where("uuid = ?", uuid).Count(&count)
+		if count == 0 {
+			return errWrap.WrapError(errFieldSchedule.ErrFieldScheduleNotFound)
+		}
+		return errors.New("field schedule status mismatch or already updated")
+	}
+
+	return nil
 }
 
 func (f *FieldScheduleRepositories) FindAllWithPagination(ctx context.Context, param *dto.FieldScheduleRequestParam) ([]models.FieldSchedule, int64, error) {
@@ -119,12 +143,20 @@ func (f *FieldScheduleRepositories) Update(ctx context.Context, uuid string, req
 }
 
 func (f *FieldScheduleRepositories) UpdateStatus(ctx context.Context, uuid string, status constants.FieldScheduleStatus) error {
-	if err := f.db.WithContext(ctx).Model(&models.FieldSchedule{}).Where("uuid = ?", uuid).Update("status", status).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	result := f.db.WithContext(ctx).Model(&models.FieldSchedule{}).Where("uuid = ?", uuid).Update("status", status)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return errWrap.WrapError(errFieldSchedule.ErrFieldScheduleNotFound)
 		}
 		return errWrap.WrapError(errConstant.ErrSQLError)
 	}
+	
+	if result.RowsAffected == 0 {
+		logrus.Warnf("[FieldScheduleRepository] UpdateStatus: No rows affected for UUID: %s", uuid)
+	} else {
+		logrus.Infof("[FieldScheduleRepository] UpdateStatus: Successfully updated UUID: %s to status: %d", uuid, status)
+	}
+	
 	return nil
 }
 

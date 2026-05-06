@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"order-service/clients"
-	clients3 "order-service/clients/field"
 	clients4 "order-service/clients/payment"
 	clients2 "order-service/clients/user"
+	error2 "order-service/common/error"
 	"order-service/common/util"
 	"order-service/constants"
+	errConstant "order-service/constants/error"
 	errOrder "order-service/constants/error/order"
 	"order-service/domain/dto"
 	"order-service/domain/models"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -48,15 +50,46 @@ func (o *OrderService) GetAllWithPagination(ctx context.Context, req *dto.OrderR
 		if err != nil {
 			return nil, err
 		}
+
+		payment, err := o.client.GetPayment().GetPaymentByUUID(ctx, order.PaymentID)
+		if err != nil {
+			logrus.Warnf("[GetAllWithPagination] failed to get payment for order %s: %v", order.UUID, err)
+		}
+
+		var paymentLink string
+		var invoiceLink *string
+		if payment != nil {
+			paymentLink = payment.PaymentLink
+			invoiceLink = payment.InvoiceLink
+		}
+
+		orderFields, err := o.repository.GetOrderField().FindByOrderID(ctx, order.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		schedules := make([]dto.FieldData, 0, len(orderFields))
+		for _, of := range orderFields {
+			schedule, err := o.client.GetField().GetFieldByUUID(ctx, of.FieldScheduleID)
+			if err != nil {
+				logrus.Warnf("[GetAllWithPagination] failed to get schedule details for %s: %v", of.FieldScheduleID, err)
+				continue
+			}
+			schedules = append(schedules, *schedule)
+		}
+
 		orderResults = append(orderResults, dto.OrderResponse{
-			UUID:      order.UUID,
-			Code:      order.Code,
-			UserName:  user.Name,
-			Amount:    order.Amount,
-			Status:    order.Status.GetStatusString(),
-			OrderDate: order.Date,
-			CreatedAt: *order.CreatedAt,
-			UpdatedAt: *order.UpdatedAt,
+			UUID:        order.UUID,
+			Code:        order.Code,
+			UserName:    user.Name,
+			Amount:      order.Amount,
+			Status:      order.Status.GetStatusString(),
+			PaymentLink: paymentLink,
+			InvoiceLink: invoiceLink,
+			Schedules:   schedules,
+			OrderDate:   order.Date,
+			CreatedAt:   *order.CreatedAt,
+			UpdatedAt:   *order.UpdatedAt,
 		})
 	}
 
@@ -82,22 +115,55 @@ func (o *OrderService) GetOrderByUUID(ctx context.Context, uuid string) (*dto.Or
 		return nil, err
 	}
 
+	payment, err := o.client.GetPayment().GetPaymentByUUID(ctx, order.PaymentID)
+	if err != nil {
+		logrus.Warnf("[GetOrderByUUID] failed to get payment for order %s: %v", order.UUID, err)
+	}
+
+	var paymentLink string
+	var invoiceLink *string
+	if payment != nil {
+		paymentLink = payment.PaymentLink
+		invoiceLink = payment.InvoiceLink
+	}
+
+	orderFields, err := o.repository.GetOrderField().FindByOrderID(ctx, order.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	schedules := make([]dto.FieldData, 0, len(orderFields))
+	for _, of := range orderFields {
+		schedule, err := o.client.GetField().GetFieldByUUID(ctx, of.FieldScheduleID)
+		if err != nil {
+			logrus.Warnf("[GetOrderByUUID] failed to get schedule details for %s: %v", of.FieldScheduleID, err)
+			continue
+		}
+		schedules = append(schedules, *schedule)
+	}
+
 	response := dto.OrderResponse{
-		UUID:      order.UUID,
-		Code:      order.Code,
-		UserName:  user.Name,
-		Amount:    order.Amount,
-		Status:    order.Status.GetStatusString(),
-		OrderDate: order.Date,
-		CreatedAt: *order.CreatedAt,
-		UpdatedAt: *order.UpdatedAt,
+		UUID:        order.UUID,
+		Code:        order.Code,
+		UserName:    user.Name,
+		Amount:      order.Amount,
+		Status:      order.Status.GetStatusString(),
+		PaymentLink: paymentLink,
+		InvoiceLink: invoiceLink,
+		Schedules:   schedules,
+		OrderDate:   order.Date,
+		CreatedAt:   *order.CreatedAt,
+		UpdatedAt:   *order.UpdatedAt,
 	}
 
 	return &response, nil
 }
 
 func (o *OrderService) GetOrderByUserID(ctx context.Context) ([]dto.OrderByUserIDResponse, error) {
-	user := ctx.Value(constants.User).(clients2.UserData)
+	user, ok := ctx.Value(constants.User).(*clients2.UserData)
+	if !ok || user == nil {
+		return nil, errConstant.ErrUnauthorized
+	}
 
 	orderData, err := o.repository.GetOrder().FindByUserID(ctx, user.UUID.String())
 	if err != nil {
@@ -112,6 +178,21 @@ func (o *OrderService) GetOrderByUserID(ctx context.Context) ([]dto.OrderByUserI
 			return nil, err
 		}
 
+		orderFields, err := o.repository.GetOrderField().FindByOrderID(ctx, order.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		schedules := make([]dto.FieldData, 0, len(orderFields))
+		for _, of := range orderFields {
+			schedule, err := o.client.GetField().GetFieldByUUID(ctx, of.FieldScheduleID)
+			if err != nil {
+				logrus.Warnf("[GetOrderByUserID] failed to get schedule details for %s: %v", of.FieldScheduleID, err)
+				continue
+			}
+			schedules = append(schedules, *schedule)
+		}
+
 		orderResults = append(orderResults, dto.OrderByUserIDResponse{
 			Code:        order.Code,
 			Amount:      util.RupiahFormat(&order.Amount),
@@ -119,6 +200,7 @@ func (o *OrderService) GetOrderByUserID(ctx context.Context) ([]dto.OrderByUserI
 			OrderDate:   order.Date,
 			PaymentLink: payment.PaymentLink,
 			InvoiceLink: payment.InvoiceLink,
+			Schedules:   schedules,
 		})
 	}
 
@@ -126,29 +208,34 @@ func (o *OrderService) GetOrderByUserID(ctx context.Context) ([]dto.OrderByUserI
 }
 
 func (o *OrderService) Create(ctx context.Context, req *dto.OrderRequest) (*dto.OrderResponse, error) {
+	user, ok := ctx.Value(constants.User).(*clients2.UserData)
+	if !ok || user == nil {
+		return nil, errConstant.ErrUnauthorized
+	}
+
 	var (
 		orderCreated    *models.Order
-		field           *clients3.FieldData
-		user            = ctx.Value(constants.User).(*clients2.UserData)
+		field           *dto.FieldData
 		totalAmount     = float64(0)
 		paymentResponse *clients4.PaymentData
+		err             error
 	)
 
 	orderFieldSchedules := make([]models.OrderField, 0, len(req.FieldScheduleIDs))
 	for _, fieldID := range req.FieldScheduleIDs {
 		uuidParsed := uuid.MustParse(fieldID)
-		field, err := o.client.GetField().GetFieldByUUID(ctx, uuidParsed)
+		field, err = o.client.GetField().GetFieldByUUID(ctx, uuidParsed)
 		if err != nil {
 			return nil, err
 		}
 
 		totalAmount += field.PricePerHour
 		if field.Status == constants.BookedStatus {
-			return nil, errOrder.ErrFieldAlreadyBooked
+			return nil, error2.WrapError(errOrder.ErrFieldAlreadyBooked)
 		}
 	}
 
-	err := o.repository.GetTx().Transaction(func(tx *gorm.DB) error {
+	err = o.repository.GetTx().Transaction(func(tx *gorm.DB) error {
 		order, txErr := o.repository.GetOrder().Create(ctx, tx, &models.Order{
 			UserID: user.UUID,
 			Amount: totalAmount,
@@ -222,6 +309,22 @@ func (o *OrderService) Create(ctx context.Context, req *dto.OrderRequest) (*dto.
 		return nil, err
 	}
 
+	if orderCreated == nil {
+		return nil, error2.WrapError(errOrder.ErrOrderFailed)
+	}
+
+	if paymentResponse == nil {
+		return nil, error2.WrapError(errOrder.ErrPaymentLinkCreationFailed)
+	}
+
+	var createdAt, updatedAt time.Time
+	if orderCreated.CreatedAt != nil {
+		createdAt = *orderCreated.CreatedAt
+	}
+	if orderCreated.UpdatedAt != nil {
+		updatedAt = *orderCreated.UpdatedAt
+	}
+
 	return &dto.OrderResponse{
 		UUID:        orderCreated.UUID,
 		Code:        orderCreated.Code,
@@ -230,8 +333,8 @@ func (o *OrderService) Create(ctx context.Context, req *dto.OrderRequest) (*dto.
 		Status:      orderCreated.Status.GetStatusString(),
 		OrderDate:   orderCreated.Date,
 		PaymentLink: paymentResponse.PaymentLink,
-		CreatedAt:   *orderCreated.CreatedAt,
-		UpdatedAt:   *orderCreated.UpdatedAt,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}, nil
 }
 
@@ -271,9 +374,15 @@ func (o *OrderService) mapPaymentStatusToOrder(req *dto.PaymentData) (constants.
 func (o *OrderService) HandlePayment(ctx context.Context, req *dto.PaymentData) error {
 	var (
 		err, txErr          error
-		order               *models.Order
+		orderData           *models.Order
 		orderFieldSchedules []models.OrderField
 	)
+	
+	orderData, err = o.repository.GetOrder().FindByUUID(ctx, req.OrderID.String())
+	if err != nil {
+		return err
+	}
+
 	status, body := o.mapPaymentStatusToOrder(req)
 	err = o.repository.GetTx().Transaction(func(tx *gorm.DB) error {
 		txErr = o.repository.GetOrder().Update(ctx, tx, body, req.OrderID)
@@ -283,14 +392,14 @@ func (o *OrderService) HandlePayment(ctx context.Context, req *dto.PaymentData) 
 
 		txErr = o.repository.GetOrderHistory().Create(ctx, tx, &dto.OrderHistoryRequest{
 			Status:  status.GetStatusString(),
-			OrderID: order.ID,
+			OrderID: orderData.ID,
 		})
 		if txErr != nil {
 			return txErr
 		}
 
 		if req.Status == constants.SettlementPaymentStatus {
-			orderFieldSchedules, txErr = o.repository.GetOrderField().FindByOrderID(ctx, order.ID)
+			orderFieldSchedules, txErr = o.repository.GetOrderField().FindByOrderID(ctx, orderData.ID)
 			if txErr != nil {
 				return txErr
 			}
@@ -300,13 +409,17 @@ func (o *OrderService) HandlePayment(ctx context.Context, req *dto.PaymentData) 
 				fieldScheduleIDs = append(fieldScheduleIDs, item.FieldScheduleID.String())
 			}
 
+			logrus.Infof("[HandlePayment] Attempting to update field schedule status for IDs: %v", fieldScheduleIDs)
 			txErr = o.client.GetField().UpdateStatus(ctx, &dto.UpdateFieldScheduleStatusRequest{
 				FieldScheduleIDs: fieldScheduleIDs,
+				Status:           200,
 			})
 			if txErr != nil {
+				logrus.Errorf("[HandlePayment] Failed to update field status: %v", txErr)
 				return txErr
 			}
-		}
+			logrus.Infof("[HandlePayment] Successfully sent update status request to field-service")
+			}
 
 		return nil
 	})

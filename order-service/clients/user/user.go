@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type UserClient struct {
@@ -38,9 +39,6 @@ func (u *UserClient) GetUserByToken(ctx context.Context) (*UserData, error) {
 	)
 	apiKey := util.GenerateSHA256(generateAPIKey)
 
-	token := ctx.Value(constants.Token).(string)
-	bearerToken := fmt.Sprintf("Bearer %s", token)
-
 	url := fmt.Sprintf("%s/api/v1/auth/user", u.client.BaseURL())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -48,7 +46,10 @@ func (u *UserClient) GetUserByToken(ctx context.Context) (*UserData, error) {
 		return nil, err
 	}
 
-	req.Header.Set(constants.Authorization, bearerToken)
+	if token, ok := ctx.Value(constants.Token).(string); ok && token != "" {
+		req.Header.Set(constants.Authorization, fmt.Sprintf("Bearer %s", token))
+	}
+
 	req.Header.Set(constants.XApiKey, apiKey)
 	req.Header.Set(constants.XServiceName, config2.AppConfig.AppName)
 	req.Header.Set(constants.XRequestAt, unixTime)
@@ -86,10 +87,8 @@ func (u *UserClient) GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*UserDa
 	)
 	apiKey := util.GenerateSHA256(generateAPIKey)
 
-	token := ctx.Value(constants.Token).(string)
-	bearerToken := fmt.Sprintf("Bearer %s", token)
-
-	url := fmt.Sprintf("%s/api/v1/auth/%s", u.client.BaseURL(), uuid)
+	url := fmt.Sprintf("%s/api/v1/auth/user/%s", u.client.BaseURL(), uuid)
+	logrus.Infof("[UserClient] GetUserByUUID: hitting URL: %s", url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -97,7 +96,9 @@ func (u *UserClient) GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*UserDa
 	}
 
 	req.Header.Set(constants.XApiKey, apiKey)
-	req.Header.Set(constants.Authorization, bearerToken)
+	if token, ok := ctx.Value(constants.Token).(string); ok && token != "" {
+		req.Header.Set(constants.Authorization, fmt.Sprintf("Bearer %s", token))
+	}
 	req.Header.Set(constants.XServiceName, config2.AppConfig.AppName)
 	req.Header.Set(constants.XRequestAt, unixTime)
 
@@ -105,9 +106,12 @@ func (u *UserClient) GetUserByUUID(ctx context.Context, uuid uuid.UUID) (*UserDa
 	resp, err := client.Do(req)
 
 	if err != nil {
+		logrus.Errorf("[UserClient] GetUserByUUID: request error: %v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	logrus.Infof("[UserClient] GetUserByUUID: response status: %d", resp.StatusCode)
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, errConstant.ErrUserNotFound

@@ -34,6 +34,6 @@ func (p *PaymentRoute) Run() {
 	{
 		protected.GET("", middleware.CheckRole([]string{constants.Admin, constants.Customer}, p.client), p.controller.GetPayment().GetAllWithPagination)
 		protected.GET("/:uuid", middleware.CheckRole([]string{constants.Admin, constants.Customer}, p.client), p.controller.GetPayment().GetByUUID)
-		protected.POST("", middleware.CheckRole([]string{constants.Admin}, p.client), p.controller.GetPayment().Create)
+		protected.POST("", middleware.CheckRole([]string{constants.Admin, constants.Customer}, p.client), p.controller.GetPayment().Create)
 	}
 }

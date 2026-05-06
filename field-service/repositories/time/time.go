@@ -20,6 +20,7 @@ type TimeRepositoryInterface interface {
 	FindByUUID(ctx context.Context, uuid string) (*models.Time, error)
 	FindByID(ctx context.Context, id int) (*models.Time, error)
 	Create(ctx context.Context, req *models.Time) (*models.Time, error)
+	Delete(ctx context.Context, uuid string) error
 }
 
 func NewTimeRepository(db *gorm.DB) TimeRepositoryInterface {
@@ -66,4 +67,15 @@ func (t *TimeRepository) Create(ctx context.Context, req *models.Time) (*models.
 		return nil, errWrap.WrapError(errConstant.ErrSQLError)
 	}
 	return req, nil
+}
+
+func (t *TimeRepository) Delete(ctx context.Context, uuid string) error {
+	result := t.db.WithContext(ctx).Where("uuid = ?", uuid).Delete(&models.Time{})
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return errWrap.WrapError(errTime.ErrTimeNotFound)
+		}
+		return errWrap.WrapError(errConstant.ErrSQLError)
+	}
+	return nil
 }

@@ -20,6 +20,7 @@ type TimeControllerInterface interface {
 	GetAll(ctx *gin.Context)
 	GetByUUID(ctx *gin.Context)
 	Create(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
 func NewTimeController(service services.ServiceRegistryInterface) TimeControllerInterface {
@@ -110,5 +111,22 @@ func (t *TimeController) Create(ctx *gin.Context) {
 	}
 
 	response.Success(ctx, http.StatusCreated, result, nil)
+}
+
+func (t *TimeController) Delete(ctx *gin.Context) {
+	id := ctx.Param("uuid")
+	if _, err := uuid.Parse(id); err != nil {
+		errMessage := "invalid uuid format"
+		response.Error(ctx, http.StatusBadRequest, err, &errMessage, nil)
+		return
+	}
+
+	err := t.service.GetTime().Delete(ctx.Request.Context(), id)
+	if err != nil {
+		response.ErrorFromApp(ctx, err)
+		return
+	}
+
+	response.Success(ctx, http.StatusOK, "Time slot deleted successfully", nil)
 }
 

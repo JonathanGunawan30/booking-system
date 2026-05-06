@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type FieldScheduleService struct {
@@ -85,7 +86,7 @@ func (f *FieldScheduleService) GetAllByFieldIDAndDate(ctx context.Context, uuid,
 			Date:         schedule.Date.Format(time.DateOnly),
 			Time:         fmt.Sprintf("%s - %s", schedule.Time.StartTime, schedule.Time.EndTime),
 			Status:       schedule.Status.GetStatusString(),
-			PricePerHour: util.RupiahFormat(new(float64(schedule.Field.PricePerHour))),
+			PricePerHour: util.RupiahFormat(util.Float64(float64(schedule.Field.PricePerHour))),
 		})
 	}
 
@@ -266,15 +267,19 @@ func (f *FieldScheduleService) Update(ctx context.Context, uuid string, req *dto
 
 func (f *FieldScheduleService) UpdateStatus(ctx context.Context, req *dto.UpdateStatusFieldScheduleRequest) error {
 	for _, item := range req.FieldScheduleIDs {
+		logrus.Infof("[FieldScheduleService] Updating status for UUID: %s to %d", item, req.Status)
 		_, err := f.repository.GetFieldSchedule().FindByUUID(ctx, item)
 		if err != nil {
+			logrus.Errorf("[FieldScheduleService] Error finding UUID %s: %v", item, err)
 			return err
 		}
 
-		err = f.repository.GetFieldSchedule().UpdateStatus(ctx, item, constants.Booked)
+		err = f.repository.GetFieldSchedule().UpdateStatus(ctx, item, constants.FieldScheduleStatus(req.Status))
 		if err != nil {
+			logrus.Errorf("[FieldScheduleService] Error updating status for UUID %s: %v", item, err)
 			return err
 		}
+		logrus.Infof("[FieldScheduleService] Successfully updated status for UUID: %s", item)
 	}
 	return nil
 }

@@ -19,7 +19,7 @@ type TimeRouteInterface interface {
 	Run()
 }
 
-func NewFieldRoute(controller controllers.ControllerRegistryInterface, group *gin.RouterGroup, client clients.ClientRegistryInterface) TimeRouteInterface {
+func NewTimeRoute(controller controllers.ControllerRegistryInterface, group *gin.RouterGroup, client clients.ClientRegistryInterface) TimeRouteInterface {
 	return &TimeRoute{controller: controller, group: group, client: client}
 }
 
@@ -29,4 +29,5 @@ func (t *TimeRoute) Run() {
 	group.GET("", t.controller.GetTime().GetAll)
 	group.GET("/:uuid", t.controller.GetTime().GetByUUID)
 	group.POST("", t.controller.GetTime().Create)
+	group.DELETE("/:uuid", t.controller.GetTime().Delete)
 }

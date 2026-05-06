@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type FieldScheduleController struct {
@@ -270,13 +271,17 @@ func (f *FieldScheduleController) Delete(ctx *gin.Context) {
 // @Router /field/schedule [patch]
 func (f *FieldScheduleController) UpdateStatus(ctx *gin.Context) {
 	var request dto.UpdateStatusFieldScheduleRequest
-	if err := ctx.ShouldBind(&request); err != nil {
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		logrus.Errorf("[FieldScheduleController] Failed to bind request: %v", err)
 		response.Error(ctx, http.StatusBadRequest, err, nil, nil)
 		return
 	}
 
+	logrus.Infof("[FieldScheduleController] Received UpdateStatus request: %+v", request)
+
 	err := f.service.GetFieldSchedule().UpdateStatus(ctx.Request.Context(), &request)
 	if err != nil {
+		logrus.Errorf("[FieldScheduleController] Service error: %v", err)
 		response.ErrorFromApp(ctx, err)
 		return
 	}

@@ -149,3 +149,14 @@ func Authenticate() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func AuthenticateWithoutToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if err := validateAPIKey(c); err != nil {
+			responseUnauthorized(c, errConstant.ErrUnauthorized.Error())
+			return
+		}
+
+		c.Next()
+	}
+}

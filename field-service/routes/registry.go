@@ -33,7 +33,7 @@ func (r *Registry) fieldScheduleRoute() fieldScheduleRoute.FieldScheduleRouteInt
 }
 
 func (r *Registry) timeRoute() timeRoute.TimeRouteInterface {
-	return timeRoute.NewFieldRoute(r.controller, r.route, r.client)
+	return timeRoute.NewTimeRoute(r.controller, r.route, r.client)
 }
 
 func (r *Registry) Serve() {

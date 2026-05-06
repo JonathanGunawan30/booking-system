@@ -41,14 +41,15 @@ func (m *MidtransClient) CreatePaymentLink(request *dto.PaymentRequest) (*Midtra
 	}
 
 	expiryUnit := "minute"
-	expiryDuration := duration.Minutes()
+	expiryDuration := int64(duration.Minutes())
 
-	if duration.Hours() > 0 {
-		expiryUnit = "hour"
-		expiryDuration = duration.Hours()
-	} else if duration.Hours() >= 24 {
+	if duration.Hours() >= 24 {
 		expiryUnit = "day"
-		expiryDuration = duration.Hours() / 24
+		expiryDuration = int64(duration.Hours() / 24)
+	}
+
+	if expiryDuration <= 0 && expiryUnit == "minute" {
+		expiryDuration = 1
 	}
 
 	if m.Production {
@@ -76,7 +77,7 @@ func (m *MidtransClient) CreatePaymentLink(request *dto.PaymentRequest) (*Midtra
 		},
 		Expiry: &snap.ExpiryDetails{
 			Unit:     expiryUnit,
-			Duration: int64(expiryDuration),
+			Duration: expiryDuration,
 		},
 	}
 

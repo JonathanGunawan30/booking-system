@@ -192,7 +192,11 @@ func (u *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid s
 }
 
 func (u *UserService) GetUserLogin(ctx context.Context) (*dto.UserResponse, error) {
-	userLogin := ctx.Value(constants.UserLogin).(*dto.UserResponse)
+	userLogin, ok := ctx.Value(constants.UserLogin).(*dto.UserResponse)
+	if !ok || userLogin == nil {
+		return nil, errConstants.ErrUnauthorized
+	}
+
 	data := dto.UserResponse{
 		UUID:        userLogin.UUID,
 		Name:        userLogin.Name,
@@ -205,8 +209,10 @@ func (u *UserService) GetUserLogin(ctx context.Context) (*dto.UserResponse, erro
 }
 
 func (u *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.UserResponse, error) {
+	logrus.Infof("[UserService] GetUserByUUID: searching for UUID: %s", uuid)
 	user, err := u.repository.GetUser().FindByUUID(ctx, uuid)
 	if err != nil {
+		logrus.Errorf("[UserService] GetUserByUUID error: %v", err)
 		return nil, err
 	}
 	data := dto.UserResponse{

@@ -40,7 +40,7 @@ func (p *PaymentClient) GetPaymentByUUID(ctx context.Context, uuid uuid.UUID) (*
 	token := ctx.Value(constants.Token).(string)
 	bearerToken := fmt.Sprintf("Bearer %s", token)
 
-	url := fmt.Sprintf("%s/api/v1/payment/%s", p.client.BaseURL(), uuid.String())
+	url := fmt.Sprintf("%s/api/v1/payments/%s", p.client.BaseURL(), uuid.String())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -87,7 +87,7 @@ func (p *PaymentClient) CreatePaymentLink(ctx context.Context, req *dto.PaymentR
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/api/v1/payment", p.client.BaseURL())
+	url := fmt.Sprintf("%s/api/v1/payments", p.client.BaseURL())
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
@@ -112,7 +112,7 @@ func (p *PaymentClient) CreatePaymentLink(ctx context.Context, req *dto.PaymentR
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("payment response: %s", resp.Status)
+		return nil, fmt.Errorf("payment response: %s", response.Message)
 	}
 
 	return &response.Data, nil

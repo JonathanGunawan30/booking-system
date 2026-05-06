@@ -67,6 +67,10 @@ func GenerateSHA256(input string) string {
 	return hashString
 }
 
+func Float64(v float64) *float64 {
+	return &v
+}
+
 func RupiahFormat(amount *float64) string {
 	stringValue := "0"
 	if amount != nil {
