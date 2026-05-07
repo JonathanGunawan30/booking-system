@@ -12,6 +12,7 @@ import (
 	"user-service/repositories"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
