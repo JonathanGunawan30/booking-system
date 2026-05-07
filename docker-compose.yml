@@ -1,37 +1,42 @@
+networks:
+  bs-network:
+    driver: bridge
+
 services:
-  # Infrastructure: Kafka (KRaft Mode - No Zookeeper)
   kafka:
-    image: bitnami/kafka:3.7
+    image: apache/kafka:latest
     container_name: bs-kafka
     restart: unless-stopped
     environment:
-      # KRaft settings
-      - KAFKA_CFG_NODE_ID=1
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      - KAFKA_HEAP_OPTS=-Xmx512M -Xms256M
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_HEAP_OPTS: "-Xmx256M -Xms128M"
     networks:
       - bs-network
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka:9092 --list"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list"]
       interval: 15s
       timeout: 10s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 320M
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # Services
   user-service:
-    build: ./user-service
+    image: jonathangunawan30/bs-user-service:latest
     container_name: bs-user-service
     restart: unless-stopped
     env_file:
@@ -51,7 +56,7 @@ services:
         max-file: "3"
 
   field-service:
-    build: ./field-service
+    image: jonathangunawan30/bs-field-service:latest
     container_name: bs-field-service
     restart: unless-stopped
     env_file:
@@ -67,7 +72,7 @@ services:
     logging: *default-logging
 
   payment-service:
-    build: ./payment-service
+    image: jonathangunawan30/bs-payment-service:latest
     container_name: bs-payment-service
     restart: unless-stopped
     env_file:
@@ -87,10 +92,10 @@ services:
     logging: *default-logging
 
   order-service-api:
-    build: ./order-service
+    image: jonathangunawan30/bs-order-service:latest
     container_name: bs-order-service-api
     restart: unless-stopped
-    command: api
+    command: ["api"]
     env_file:
       - ./order-service/.env
     environment:
@@ -108,10 +113,10 @@ services:
     logging: *default-logging
 
   order-service-worker:
-    build: ./order-service
+    image: jonathangunawan30/bs-order-service:latest
     container_name: bs-order-service-worker
     restart: unless-stopped
-    command: worker
+    command: ["worker"]
     env_file:
       - ./order-service/.env
     environment:
@@ -122,12 +127,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 128M
     networks:
       - bs-network
     logging: *default-logging
 
-  # API Gateway
   nginx:
     image: nginx:alpine
     container_name: bs-nginx
@@ -149,7 +153,3 @@ services:
     networks:
       - bs-network
     logging: *default-logging
-
-networks:
-  bs-network:
-    driver: bridge
