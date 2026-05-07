@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 	"user-service/common/response"
 	"user-service/config"
@@ -19,6 +23,7 @@ import (
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -30,12 +35,14 @@ var command = &cobra.Command{
 		config.AppConfig = config.LoadConfig()
 		db, err := config.InitDatabase()
 		if err != nil {
-			panic(err)
+			logrus.Errorf("failed to initialize database: %v", err)
+			return
 		}
 
 		loc, err := time.LoadLocation(config.AppConfig.Timezone)
 		if err != nil {
-			panic(err)
+			logrus.Errorf("failed to load timezone: %v", err)
+			return
 		}
 
 		time.Local = loc
@@ -44,9 +51,9 @@ var command = &cobra.Command{
 			&models.Role{},
 			&models.User{},
 		)
-
 		if err != nil {
-			panic(err)
+			logrus.Errorf("failed to migrate database: %v", err)
+			return
 		}
 
 		seeders.NewSeederRegistry(db).Run()
@@ -81,8 +88,32 @@ var command = &cobra.Command{
 		route := routes.NewRouteRegistry(controllers, group)
 		route.Serve()
 
-		port := fmt.Sprintf(":%d", config.AppConfig.Port)
-		_ = router.Run(port)
+		srv := &http.Server{
+			Addr:    fmt.Sprintf(":%d", config.AppConfig.Port),
+			Handler: router,
+		}
+
+		go func() {
+			logrus.Infof("HTTP server starting on port %d", config.AppConfig.Port)
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logrus.Errorf("HTTP server failed: %v", err)
+			}
+		}()
+
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+		<-quit
+
+		logrus.Info("Shutting down server...")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			logrus.Errorf("Server forced to shutdown: %v", err)
+		}
+
+		logrus.Info("Server exiting")
 	},
 }
 

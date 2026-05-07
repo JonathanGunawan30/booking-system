@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"payment-service/clients"
 	"payment-service/clients/midtrans"
 	"payment-service/common/cloudflare"
@@ -17,12 +20,14 @@ import (
 	"payment-service/routes"
 	devRoute "payment-service/routes/dev"
 	"payment-service/services"
+	"syscall"
 	"time"
 
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -41,12 +46,14 @@ var command = &cobra.Command{
 		config.AppConfig = config.LoadConfig()
 		db, err := config.InitDatabase()
 		if err != nil {
-			panic(err)
+			logrus.Errorf("failed to initialize database: %v", err)
+			return
 		}
 
 		loc, err := time.LoadLocation(config.AppConfig.Timezone)
 		if err != nil {
-			panic(err)
+			logrus.Errorf("failed to load timezone: %v", err)
+			return
 		}
 
 		time.Local = loc
@@ -55,6 +62,10 @@ var command = &cobra.Command{
 			&models.Payment{},
 			models.PaymentHistory{},
 		)
+		if err != nil {
+			logrus.Errorf("failed to migrate database: %v", err)
+			return
+		}
 
 		s3 := config.InitR2()
 		r2 := cloudflare.NewR2Client(s3)
@@ -62,10 +73,6 @@ var command = &cobra.Command{
 		midtrans := midtrans.NewMidtransClient(config.AppConfig.Midtrans.ServerKey, config.AppConfig.Midtrans.Production)
 
 		client := clients.NewClientRegistry()
-
-		if err != nil {
-			panic(err)
-		}
 
 		repository := repositories.NewRepositoryRegistry(db)
 		services := services.NewServiceRegistry(repository, *r2, kafka, midtrans)
@@ -99,8 +106,32 @@ var command = &cobra.Command{
 		route := routes.NewRouteRegistry(group, controllers, client)
 		route.Serve()
 
-		port := fmt.Sprintf(":%d", config.AppConfig.Port)
-		_ = router.Run(port)
+		srv := &http.Server{
+			Addr:    fmt.Sprintf(":%d", config.AppConfig.Port),
+			Handler: router,
+		}
+
+		go func() {
+			logrus.Infof("HTTP server starting on port %d", config.AppConfig.Port)
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logrus.Errorf("HTTP server failed: %v", err)
+			}
+		}()
+
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+		<-quit
+
+		logrus.Info("Shutting down server...")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			logrus.Errorf("Server forced to shutdown: %v", err)
+		}
+
+		logrus.Info("Server exiting")
 	},
 }
 
