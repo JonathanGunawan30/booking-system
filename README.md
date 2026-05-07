@@ -4,17 +4,22 @@ A robust microservices ecosystem for managing resource bookings, payments, and u
 
 ## Architecture Diagram
 
-The following diagram illustrates the interaction between services and infrastructure components:
+The following diagram illustrates the interaction between services and infrastructure components through the API Gateway:
 
 ```mermaid
 graph TD
-    Client[Frontend / Client] -->|REST API| OrderSvc[Order Service]
-    Client -->|REST API| UserSvc[User Service]
-    Client -->|REST API| ResourceSvc[Field Service]
+    Client[Frontend / Client] -->|Port 80| Nginx[Nginx API Gateway]
     
-    OrderSvc -->|Sync API| UserSvc
-    OrderSvc -->|Sync API| ResourceSvc
-    OrderSvc -->|Sync API| PaySvc[Payment Service]
+    subgraph Backend Services
+        Nginx -->|/api/v1/auth| UserSvc[User Service]
+        Nginx -->|/api/v1/order| OrderAPI[Order Service API]
+        Nginx -->|/api/v1/field| FieldSvc[Field Service]
+        Nginx -->|/api/v1/payments| PaySvc[Payment Service]
+    end
+    
+    OrderAPI -->|Sync API| UserSvc
+    OrderAPI -->|Sync API| FieldSvc
+    OrderAPI -->|Sync API| PaySvc
     
     PaySvc -->|Snap API| Midtrans[Midtrans PG]
     Midtrans -->|Webhook| PaySvc
@@ -22,8 +27,8 @@ graph TD
     PaySvc -->|Upload Invoice| R2[Cloudflare R2]
     PaySvc -->|Produce Message| Kafka[Apache Kafka]
     
-    Kafka -->|Consume Message| OrderSvc
-    OrderSvc -->|Update Status| ResourceSvc
+    Kafka -->|Consume Message| OrderWorker[Order Service Worker]
+    OrderWorker -->|Update Status| FieldSvc
     
     subgraph Shared Infrastructure
         DB[(PostgreSQL)]
@@ -34,51 +39,52 @@ graph TD
 
 ## Services Description
 
-The system consists of four primary services communicating via REST APIs for synchronous operations and Apache Kafka for asynchronous synchronization.
+The system consists of specialized microservices communicating via an **Nginx API Gateway** for external traffic, REST APIs for synchronous operations, and Apache Kafka for asynchronous synchronization.
 
-1. User Service (Port 8001)
+1. User Service (Port 8080)
    - Manages user authentication (JWT) and profile management.
    - Handles role-based access control (Admin & Customer).
-   - Provides internal service-to-service identity verification.
+   - Validates internal service-to-service communication via Custom Headers.
 
-2. Resource Service (Field Service - Port 8002)
+2. Field Service (Port 8002)
    - Manages bookable resources and availability schedules.
    - Automates periodic schedule generation.
    - Handles real-time slot status updates.
 
 3. Order Service (Port 8004)
-   - Orchestrates the booking process.
-   - Calculates pricing and handles order state transitions.
-   - Synchronizes with Resource Service to reserve slots and Payment Service to facilitate transactions.
+   - **Order API**: Orchestrates the booking process and pricing.
+   - **Order Worker**: Consumes Kafka messages to finalize orders and sync field availability.
+   - Synchronizes with Field Service and Payment Service.
 
 4. Payment Service (Port 8003)
    - Integrates with Midtrans Payment Gateway (Snap API).
    - Manages payment status, webhooks, and automatic invoice generation.
-   - Stores invoices in Cloudflare R2 and synchronizes status with Order Service via Kafka messages.
+   - Stores invoices in Cloudflare R2 and produces Kafka messages upon payment success.
 
 ## Technical Stack
 
-- Language: Go (Golang)
-- Database: PostgreSQL (GORM ORM)
-- Messaging: Apache Kafka (sarama) for background synchronization
-- Payment Gateway: Midtrans
-- Storage: Cloudflare R2 (S3 Compatible)
-- Logging: Logrus
-- API Documentation: Swagger (swag)
-- Containerization: Docker & Docker Compose
+- **API Gateway**: Nginx (Centralized CORS, Rate Limiting, Routing)
+- **Language**: Go (Golang)
+- **Database**: PostgreSQL (GORM ORM)
+- **Messaging**: Apache Kafka for asynchronous synchronization
+- **Payment Gateway**: Midtrans
+- **Storage**: Cloudflare R2 (S3 Compatible)
+- **API Documentation**: Swagger (swag)
 
 ## System Synchronization Flow
 
-1. Order Creation: Order Service creates a pending order and calls Payment Service to generate a transaction link.
-2. Payment Notification: The payment gateway sends a notification to the Payment Service Webhook.
-3. Status Update: Payment Service updates its record, uploads the invoice to R2, and sends a message to Kafka.
-4. Finalization: Order Service consumes the message, updates order status, and triggers a status update in the Resource Service to finalize the booking.
+1. **Request**: Client sends a request through Nginx (Port 80).
+2. **Order Creation**: Order API creates a pending order and calls Payment Service for a transaction link.
+3. **Payment Notification**: Midtrans sends a notification to Payment Service Webhook.
+4. **Asynchronous Sync**: Payment Service updates its record and sends a message to Kafka.
+5. **Finalization**: Order Worker consumes the message, updates order status, and triggers a status update in Field Service.
 
 ## Getting Started
 
 ### Prerequisites
 - Docker & Docker Compose
-- Go 1.22+ (for local development)
+- Nginx (Installed or via Docker)
+- Go 1.22+
 - Midtrans Sandbox Account
 - Cloudflare R2 Bucket
 
@@ -89,12 +95,14 @@ The system consists of four primary services communicating via REST APIs for syn
    ```bash
    docker-compose up -d
    ```
-3. Configure .env files in each service directory.
-4. Run services:
+3. Configure `.env` files in each service directory.
+4. Run Nginx as the API Gateway (ensure `nginx/` config is loaded).
+5. Run services:
    ```bash
-   cd [service-directory]
+   # Field, User, Payment
    go run main.go serve
+   
+   # Order Service (Decoupled)
+   go run main.go api
+   go run main.go worker
    ```
-
----
-Developed by Booking System Team.

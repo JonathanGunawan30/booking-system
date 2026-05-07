@@ -9,8 +9,6 @@ import (
 	"order-service/config"
 	"order-service/constants"
 	controllers "order-service/controllers/http"
-	kafka2 "order-service/controllers/kafka"
-	kafka "order-service/controllers/kafka/config"
 	"order-service/domain/models"
 	middleware "order-service/middlewares"
 	"order-service/repositories"
@@ -22,7 +20,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
@@ -31,25 +28,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var command = &cobra.Command{
-	Use:   "serve",
-	Short: "Start the order service",
+var rootCmd = &cobra.Command{
+	Use:   "order-service",
+	Short: "Order Service CLI",
+}
+
+var apiCmd = &cobra.Command{
+	Use:   "api",
+	Short: "Start the order HTTP API",
 	Run: func(cmd *cobra.Command, args []string) {
-		_ = godotenv.Load()
-		config.AppConfig = config.LoadConfig()
+		initialize()
+
 		db, err := config.InitDatabase()
 		if err != nil {
 			logrus.Errorf("failed to initialize database: %v", err)
 			return
 		}
-
-		loc, err := time.LoadLocation(config.AppConfig.Timezone)
-		if err != nil {
-			logrus.Errorf("failed to load timezone: %v", err)
-			return
-		}
-
-		time.Local = loc
 
 		err = db.AutoMigrate(
 			&models.Order{},
@@ -71,25 +65,36 @@ var command = &cobra.Command{
 		defer stop()
 
 		wg := &sync.WaitGroup{}
-
 		wg.Add(1)
 		go serveHttp(ctx, wg, controller, client)
 
-		wg.Add(1)
-		go serveKafkaConsumer(ctx, wg, service)
-
-		logrus.Info("Application is running...")
-
+		logrus.Info("Order API is running...")
 		<-ctx.Done()
-		logrus.Info("Shutting down application...")
-
+		logrus.Info("Shutting down Order API...")
 		wg.Wait()
-		logrus.Info("Application stopped cleanly")
+		logrus.Info("Order API stopped cleanly")
 	},
 }
 
+func initialize() {
+	_ = godotenv.Load()
+	config.AppConfig = config.LoadConfig()
+
+	loc, err := time.LoadLocation(config.AppConfig.Timezone)
+	if err != nil {
+		logrus.Errorf("failed to load timezone: %v", err)
+		return
+	}
+	time.Local = loc
+}
+
+func init() {
+	rootCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(workerCmd)
+}
+
 func Run() {
-	if err := command.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -110,21 +115,8 @@ func serveHttp(ctx context.Context, wg *sync.WaitGroup, controller controllers.C
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, response.Response{
 			Status:  constants.Success,
-			Message: "Order Service",
+			Message: "Order Service API",
 		})
-	})
-
-	router.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization, x-service-name, x-request-at, x-api-key")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-		} else {
-			c.Next()
-		}
 	})
 
 	lmt := tollbooth.NewLimiter(
@@ -160,57 +152,4 @@ func serveHttp(ctx context.Context, wg *sync.WaitGroup, controller controllers.C
 		logrus.Errorf("HTTP server forced to shutdown: %v", err)
 	}
 	logrus.Info("HTTP server stopped")
-}
-
-func serveKafkaConsumer(ctx context.Context, wg *sync.WaitGroup, service services.ServiceRegistryInterface) {
-	defer wg.Done()
-
-	kafkaConsumerConfig := sarama.NewConfig()
-	kafkaConsumerConfig.Consumer.MaxWaitTime = time.Duration(config.AppConfig.Kafka.MaxWaitTime) * time.Millisecond
-	kafkaConsumerConfig.Consumer.MaxProcessingTime = time.Duration(config.AppConfig.Kafka.MaxProcessingTime) * time.Millisecond
-	kafkaConsumerConfig.Consumer.Retry.Backoff = time.Duration(config.AppConfig.Kafka.BackOffTime) * time.Millisecond
-	kafkaConsumerConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
-	kafkaConsumerConfig.Consumer.Offsets.AutoCommit.Enable = true
-	kafkaConsumerConfig.Consumer.Offsets.AutoCommit.Interval = 1 * time.Second
-	kafkaConsumerConfig.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{
-		sarama.NewBalanceStrategyRoundRobin(),
-	}
-
-	brokers := config.AppConfig.Kafka.Brokers
-	groupID := config.AppConfig.Kafka.GroupID
-	topics := config.AppConfig.Kafka.Topics
-
-	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupID, kafkaConsumerConfig)
-	if err != nil {
-		logrus.Errorf("failed to create consumer group: %v", err)
-		return
-	}
-
-	consumer := kafka.NewConsumerGroup()
-	kafkaRegistry := kafka2.NewKafkaRegistry(service)
-	kafkaConsumer := kafka.NewKafkaConsumer(consumer, kafkaRegistry)
-	kafkaConsumer.Register()
-
-	go func() {
-		for {
-			if err := consumerGroup.Consume(ctx, topics, consumer); err != nil {
-				logrus.Errorf("failed to consume message: %v", err)
-				time.Sleep(2 * time.Second)
-			}
-
-			if ctx.Err() != nil {
-				return
-			}
-		}
-	}()
-
-	logrus.Info("Kafka consumer started")
-
-	<-ctx.Done()
-	logrus.Info("Shutting down Kafka consumer...")
-
-	if err := consumerGroup.Close(); err != nil {
-		logrus.Errorf("failed to close consumer group: %v", err)
-	}
-	logrus.Info("Kafka consumer stopped")
 }
