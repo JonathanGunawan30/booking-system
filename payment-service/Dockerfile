@@ -9,12 +9,14 @@ RUN go mod download
 
 COPY . .
 
-RUN make build
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o payment-service .
 
-FROM alpine:latest
+FROM debian:bullseye-slim
 
-RUN apk update && apk upgrade && \
-    apk --no-cache add tzdata curl && \
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates tzdata curl wkhtmltopdf fonts-dejavu fonts-droid-fallback fonts-freefont-ttf fonts-liberation && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
     mkdir /app
 
 WORKDIR /app
@@ -22,5 +24,6 @@ WORKDIR /app
 EXPOSE 8003
 
 COPY --from=builder /app/payment-service ./payment-service
+COPY --from=builder /app/template ./template
 
 ENTRYPOINT ["/app/payment-service"]

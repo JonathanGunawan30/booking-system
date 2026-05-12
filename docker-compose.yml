@@ -41,8 +41,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./user-service/.env
-    environment:
-      - PORT=8080
     deploy:
       resources:
         limits:
@@ -61,8 +59,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./field-service/.env
-    environment:
-      - PORT=8002
     deploy:
       resources:
         limits:
@@ -78,7 +74,6 @@ services:
     env_file:
       - ./payment-service/.env
     environment:
-      - PORT=8003
       - KAFKA_BROKERS=kafka:9092
     depends_on:
       kafka:
@@ -99,7 +94,6 @@ services:
     env_file:
       - ./order-service/.env
     environment:
-      - PORT=8004
       - KAFKA_BROKERS=kafka:9092
     depends_on:
       kafka:

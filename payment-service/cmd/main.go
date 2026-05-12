@@ -70,7 +70,11 @@ var command = &cobra.Command{
 		s3 := config.InitR2()
 		r2 := cloudflare.NewR2Client(s3)
 		kafka := kafka2.NewKafkaRegistry(config.AppConfig.Kafka.Brokers)
-		midtrans := midtrans.NewMidtransClient(config.AppConfig.Midtrans.ServerKey, config.AppConfig.Midtrans.Production)
+		midtrans := midtrans.NewMidtransClient(
+			config.AppConfig.Midtrans.ServerKey,
+			config.AppConfig.Midtrans.Production,
+			config.AppConfig.Midtrans.SuccessCallbackURL,
+		)
 
 		client := clients.NewClientRegistry()
 

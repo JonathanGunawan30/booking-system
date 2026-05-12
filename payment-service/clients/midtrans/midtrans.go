@@ -11,18 +11,20 @@ import (
 )
 
 type MidtransClient struct {
-	ServerKey  string
-	Production bool
+	ServerKey          string
+	Production         bool
+	SuccessCallbackURL string
 }
 
 type MidtransClientInterface interface {
 	CreatePaymentLink(request *dto.PaymentRequest) (*MidtransData, error)
 }
 
-func NewMidtransClient(serverKey string, production bool) MidtransClientInterface {
+func NewMidtransClient(serverKey string, production bool, successCallbackURL string) MidtransClientInterface {
 	return &MidtransClient{
-		ServerKey:  serverKey,
-		Production: production,
+		ServerKey:          serverKey,
+		Production:         production,
+		SuccessCallbackURL: successCallbackURL,
 	}
 }
 
@@ -78,6 +80,9 @@ func (m *MidtransClient) CreatePaymentLink(request *dto.PaymentRequest) (*Midtra
 		Expiry: &snap.ExpiryDetails{
 			Unit:     expiryUnit,
 			Duration: expiryDuration,
+		},
+		Callbacks: &snap.Callbacks{
+			Finish: m.SuccessCallbackURL,
 		},
 	}
 

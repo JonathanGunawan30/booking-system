@@ -67,9 +67,10 @@ type Kafka struct {
 }
 
 type Midtrans struct {
-	ServerKey  string `mapstructure:"MIDTRANS_SERVER_KEY"`
-	ClientKey  string `mapstructure:"MIDTRANS_CLIENT_KEY"`
-	Production bool   `mapstructure:"MIDTRANS_PRODUCTION"`
+	ServerKey          string `mapstructure:"MIDTRANS_SERVER_KEY"`
+	ClientKey          string `mapstructure:"MIDTRANS_CLIENT_KEY"`
+	Production         bool   `mapstructure:"MIDTRANS_PRODUCTION"`
+	SuccessCallbackURL string `mapstructure:"MIDTRANS_SUCCESS_CALLBACK_URL"`
 }
 
 func bindAllEnvironmentVariables() {
@@ -79,7 +80,7 @@ func bindAllEnvironmentVariables() {
 		"MAX_UPLOAD_SIZE",
 		"USER_HOST", "USER_SIGNATURE_KEY",
 		"KAFKA_BROKERS", "KAFKA_TOPIC", "KAFKA_TIMEOUT", "KAFKA_MAX_RETRY",
-		"MIDTRANS_SERVER_KEY", "MIDTRANS_CLIENT_KEY", "MIDTRANS_PRODUCTION",
+		"MIDTRANS_SERVER_KEY", "MIDTRANS_CLIENT_KEY", "MIDTRANS_PRODUCTION", "MIDTRANS_SUCCESS_CALLBACK_URL",
 		"CLOUDFLARE_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_ENDPOINT", "R2_PUBLIC_URL",
 		"TIMEZONE", "CONSUL_HTTP_URL", "CONSUL_HTTP_KEY", "CONSUL_HTTP_TOKEN", "CONSUL_WATCH_INTERVAL_SECONDS",
 		"DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASSWORD", "DB_SSL_MODE",
