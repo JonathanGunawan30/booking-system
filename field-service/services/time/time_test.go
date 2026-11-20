@@ -63,6 +63,11 @@ func (m *MockTimeRepository) Create(ctx context.Context, req *models.Time) (*mod
 	return args.Get(0).(*models.Time), args.Error(1)
 }
 
+func (m *MockTimeRepository) Delete(ctx context.Context, uuid string) error {
+	args := m.Called(ctx, uuid)
+	return args.Error(0)
+}
+
 func TestTimeService_GetAll(t *testing.T) {
 	ctx := context.Background()
 

@@ -61,6 +61,11 @@ func (m *MockTimeService) Create(ctx context.Context, req *dto.TimeRequest) (*dt
 	return args.Get(0).(*dto.TimeResponse), args.Error(1)
 }
 
+func (m *MockTimeService) Delete(ctx context.Context, uuid string) error {
+	args := m.Called(ctx, uuid)
+	return args.Error(0)
+}
+
 func TestTimeController_GetAll(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockServiceRegistry := new(MockServiceRegistry)

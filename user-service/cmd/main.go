@@ -63,6 +63,7 @@ var command = &cobra.Command{
 		controllers := controllers.NewControllerRegistry(services)
 
 		router := gin.Default()
+		_ = router.SetTrustedProxies([]string{"127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"})
 		router.Use(middleware.HandlePanic())
 		router.NoRoute(func(c *gin.Context) {
 			message := fmt.Sprintf("route %s %s not found", c.Request.Method, c.Request.URL.Path)

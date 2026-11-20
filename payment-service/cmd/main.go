@@ -83,6 +83,7 @@ var command = &cobra.Command{
 		controllers := controllers.NewRegistryController(services)
 
 		router := gin.Default()
+		_ = router.SetTrustedProxies([]string{"127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"})
 		router.Use(middleware.HandlePanic())
 		router.NoRoute(func(c *gin.Context) {
 			message := fmt.Sprintf("route %s %s not found", c.Request.Method, c.Request.URL.Path)
@@ -93,7 +94,9 @@ var command = &cobra.Command{
 			response.Success(c, http.StatusOK, "Hello From Payment Service", nil)
 		})
 
-		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		if config.AppConfig.AppEnv != "production" {
+			router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		}
 
 		lmt := tollbooth.NewLimiter(
 			config.AppConfig.RateLimiterMaxRequest,

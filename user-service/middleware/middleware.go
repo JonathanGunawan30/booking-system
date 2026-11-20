@@ -76,8 +76,9 @@ func validateAPIKey(c *gin.Context) error {
 		return errConstant.ErrUnauthorized
 	}
 
-	if time.Since(requestTime) > 5*time.Minute {
-		logrus.Warnf("[validateAPIKey] expired request from service=%s", serviceName)
+	skew := time.Since(requestTime)
+	if skew > 5*time.Minute || skew < -5*time.Minute {
+		logrus.Warnf("[validateAPIKey] expired or skewed request from service=%s", serviceName)
 		return errConstant.ErrUnauthorized
 	}
 
