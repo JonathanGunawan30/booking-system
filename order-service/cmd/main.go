@@ -104,6 +104,7 @@ func serveHttp(ctx context.Context, wg *sync.WaitGroup, controller controllers.C
 	defer wg.Done()
 
 	router := gin.Default()
+	_ = router.SetTrustedProxies([]string{"127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"})
 	router.Use(middleware.HandlePanic())
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, response.Response{

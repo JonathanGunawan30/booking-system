@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"user-service/config"
 	"user-service/controllers"
 	_ "user-service/docs"
 	routes "user-service/routes/user"
@@ -24,7 +25,9 @@ func NewRouteRegistry(controller controllers.UserControllerRegistryInterface, gr
 }
 
 func (r *Registry) Serve() {
-	r.group.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if config.AppConfig.AppEnv != "production" {
+		r.group.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 	r.userRoute().Run()
 }
 
