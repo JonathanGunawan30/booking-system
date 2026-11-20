@@ -83,6 +83,11 @@ func (m *MockFieldScheduleRepository) UpdateStatus(ctx context.Context, uuid str
 	return args.Error(0)
 }
 
+func (m *MockFieldScheduleRepository) UpdateStatusWithCheck(ctx context.Context, uuid string, newStatus constants.FieldScheduleStatus, expectedStatus constants.FieldScheduleStatus) error {
+	args := m.Called(ctx, uuid, newStatus, expectedStatus)
+	return args.Error(0)
+}
+
 func (m *MockFieldScheduleRepository) Delete(ctx context.Context, uuid string) error {
 	args := m.Called(ctx, uuid)
 	return args.Error(0)
